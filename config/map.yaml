@@ -1,0 +1,5 @@
+components:
+- shape:
+    type: circle
+    center: [10, 10]
+    radius: 3

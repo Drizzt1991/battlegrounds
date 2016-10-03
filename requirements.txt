@@ -1,0 +1,4 @@
+pyyaml
+coverage
+nose
+pyglet
