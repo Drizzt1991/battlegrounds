@@ -2,3 +2,4 @@ pyyaml
 coverage
 nose
 pyglet
+flake8
