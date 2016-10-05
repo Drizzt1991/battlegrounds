@@ -14,9 +14,10 @@ from pyglet.gl import (
 
 class GameWindow(pyglet.window.Window):
 
-    def __init__(self, world, *args, **kw):
+    def __init__(self, world, scene, *args, **kw):
         super().__init__(*args, **kw)
         self._world = world
+        self._scene = scene
         self.fps_display = pyglet.clock.ClockDisplay()
         pyglet.clock.schedule_interval(self._tick, 1 / 60)
 
@@ -26,15 +27,10 @@ class GameWindow(pyglet.window.Window):
 
     def on_draw(self):
         self.clear()
-        self.set_2d()
-        self._world.draw()
+        self._scene.draw()
         self.fps_display.draw()
 
-    def set_2d(self):
-        """ Configure OpenGL to draw in 2d.
-
-        """
-        width, height = self.get_size()
+    def on_resize(self, width, height):
         glDisable(GL_DEPTH_TEST)
         glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)

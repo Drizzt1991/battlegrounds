@@ -23,7 +23,7 @@ def main():
         config = yaml.load(f)
     print(args, config)
     # Load map
-    with pathlib.Path(args.config['map']).open("r+") as f:
+    with pathlib.Path(config['map']).open("r+") as f:
         world_map = yaml.load(f)
 
     world = World(world_map)
@@ -34,8 +34,10 @@ def main():
         # load GUI window.
         import pyglet
         from client.graphics.window import GameWindow
+        from client.graphics.scene import Scene
 
-        GameWindow(world)
+        scene = Scene(world)
+        GameWindow(world, scene)
 
         pyglet.app.run()
     except KeyboardInterrupt:

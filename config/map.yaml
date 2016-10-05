@@ -1,5 +1,6 @@
-components:
+props:
 - shape:
     type: circle
-    center: [10, 10]
-    radius: 3
+    center: [0, 0]
+    radius: 20
+  position: [100, 100]
