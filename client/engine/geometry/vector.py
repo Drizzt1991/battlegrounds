@@ -4,6 +4,22 @@ EPSILON = 1e-5
 EPSILON2 = EPSILON ** 2
 
 
+def cos_sin_deg(deg):
+    """Return the cosine and sin for the given angle
+    in degrees, with special-case handling of multiples
+    of 90 for perfect right angles
+    """
+    deg = deg % 360.0
+    if deg == 90.0:
+        return 0.0, 1.0
+    elif deg == 180.0:
+        return -1.0, 0
+    elif deg == 270.0:
+        return 0, -1.0
+    rad = math.radians(deg)
+    return math.cos(rad), math.sin(rad)
+
+
 class Vector(object):
 
     __slots__ = ("_x", "_y")
@@ -25,6 +41,19 @@ class Vector(object):
         """Create a vector from polar coordinates. Angle should be in degrees.
         """
         return Vector.polar(math.radians(angle), length)
+
+    @property
+    def angle(self):
+        """The angle the vector makes to the positive x axis in radians
+        """
+        return math.atan2(self._y, self._x)
+
+    def rotate_deg(self, angle):
+        """ Compute a vector, that is rotated by angle deg to this one
+        """
+        ca, sa = cos_sin_deg(angle)
+        return Vector(
+            self._x * ca - self._y * sa, self._x * sa + self._y * ca)
 
     @property
     def x(self):

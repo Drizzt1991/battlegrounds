@@ -8,10 +8,11 @@ from pyglet.gl import (
 )
 
 
-def draw_circle(x, y, radius):
+def draw_circle(x, y, radius, iterations=None):
     """ Draw circle in OpenGL context
     """
-    iterations = int(2 * radius * math.pi)
+    if iterations is None:
+        iterations = int(2 * radius * math.pi)
     s = math.sin(2 * math.pi / iterations)
     c = math.cos(2 * math.pi / iterations)
 
