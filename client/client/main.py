@@ -27,6 +27,7 @@ def main():
         world_map = yaml.load(f)
 
     world = World(world_map)
+    player = world.main_actor
 
     try:
         # We import here, so, that pyglet does not start before we parsed
@@ -35,9 +36,13 @@ def main():
         import pyglet
         from client.graphics.window import GameWindow
         from client.graphics.scene import Scene
+        from client.graphics.controller import InputController
+        from client.graphics.camera import Camera
 
+        camera = Camera(player)
+        controller = InputController(camera, player)
         scene = Scene(world)
-        GameWindow(world, scene)
+        GameWindow(world, scene, controller, camera)
 
         pyglet.app.run()
     except KeyboardInterrupt:
