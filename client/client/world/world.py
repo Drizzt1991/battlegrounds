@@ -23,3 +23,7 @@ class World(ABCWorld):
     @property
     def actors(self):
         return self._actors
+
+    @property
+    def main_actor(self):
+        return self._actors[0]
