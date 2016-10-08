@@ -1,4 +1,3 @@
-from .utils import draw_circle
 from pyglet.gl import (
     glPushMatrix, glPopMatrix, glTranslatef, gluNewQuadric, gluSphere,
     GL_LINES

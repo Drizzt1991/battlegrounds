@@ -9,8 +9,6 @@ from pyglet.gl import (
     glLoadIdentity,
     glMatrixMode,
     glOrtho,
-    glRotatef,
-    glTranslatef,
     glViewport,
     gluPerspective,
     gluLookAt
