@@ -45,4 +45,4 @@ class TestAABB(unittest.TestCase):
         self.assertEqual(rect.intersects(Circle(Vector(6, 6.0001), 2)), None)
 
         self.assertEqual(rect.intersects(AABB(zr, Vector(1, 2))), None)
-        self.assertEqual(rect.intersects(AABB(zr, Vector(3, 2))), None)
+        self.assertTrue(rect.intersects(AABB(zr, Vector(3, 2))))
