@@ -19,7 +19,6 @@ def det(matrix, mul):
 
 
 def orient(a, b, c):
-
     "Determines the position of point c relative to the directed line\
     formed by points a and b.\
     If the return value is greater than 0, point c is to its left,\
@@ -30,7 +29,6 @@ def orient(a, b, c):
 
 
 def incircle(a, b, c, d):
-
     "Determines whether point d lies within the circle formed \
     by points a, b, and c.\
     If the return value is greater than 0, point d is inside the circle,\
