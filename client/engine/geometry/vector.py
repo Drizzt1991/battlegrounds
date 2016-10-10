@@ -71,15 +71,21 @@ class Vector(object):
             return Vector(self._x + other._x, self._y + other._y)
         return NotImplemented
 
+    __radd__ = __add__
+
     def __sub__(self, other):
         if isinstance(other, Vector):
             return Vector(self._x - other._x, self._y - other._y)
         return NotImplemented
 
+    __rsub__ = __sub__
+
     def __mul__(self, scalar):
         if isinstance(scalar, (int, float)):
             return Vector(self._x * scalar, self._y * scalar)
         return NotImplemented
+
+    __rmul__ = __mul__
 
     def __eq__(self, other):
         if isinstance(other, Vector):

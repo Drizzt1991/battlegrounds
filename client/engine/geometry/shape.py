@@ -6,7 +6,7 @@ class BaseShape(object):
 
     @abstractmethod
     def contains(self, vector):
-        """ Containment test for point in shape """
+        """ Containment test for point in shape. Returns True or False """
         raise NotImplementedError()
 
     @abstractmethod
