@@ -70,10 +70,3 @@ class GameWindow(pyglet.window.Window):
         position, (ex, ey, ez) = self._camera.get_viewport()
         gluLookAt(
             ex, ey, ez, position.x, position.y, 5, 0, 0, 1)
-        # angle = 45
-        # z_hight = 20
-        # # Camera should be set as an upper view of the player so we rotate if
-        # # arround the movement unit vector upwords
-        # glRotatef(-angle, rotation.x, rotation.y, 0))
-        # # Set center to camera position
-        # glTranslatef(-position.x, -position.y, -100)

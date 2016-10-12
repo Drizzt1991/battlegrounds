@@ -1,20 +1,19 @@
 import math
 
 from .shape import BaseIntersection, BaseShape
-from .vector import Vector, EPSILON2
+from .vector import Vector
 from .utils import orient
 
 
 class CircleIntersection(BaseIntersection):
 
-    def __init__(self, shape, other, touch):
+    def __init__(self, shape, other):
         self.shape = shape
         self.other = other
-        self.touch = touch
 
     def resolve_movement(self, movement):
         # Change the task to movement of point against a bigger circle
-        initial_center = (self.other._c - movement)
+        initial_center = self.other._c - movement
         s = initial_center - self.shape._c
         r = self.other._r + self.shape._r
         v = movement
@@ -85,7 +84,27 @@ class Circle(BaseShape):
             d2 = self._c.distance2(other._c)
             r2 = (self._r + other._r) ** 2
             if d2 <= r2:
-                return CircleIntersection(self, other, r2 - d2 < EPSILON2)
+                return CircleIntersection(self, other)
+
+    def time_of_impact(self, point, direction):
+        m = point - self._c
+        b = m.dot(direction)
+        c = m.dot(m) - self._r ** 2
+        # Fast exit if point outside of circle and direction points away too
+        if c > 0 and b > 0:
+            return None
+        # Next we solve an equation t^2 +2(m·d)t+(m·m)−r2 = 0
+        discr = b * b - c
+        # A negative discriminant corresponds to ray missing sphere
+        if discr < 0:
+            return None
+        # Ray now found to intersect sphere, compute smallest t value of
+        # intersection
+        t = -b - math.sqrt(discr)
+        # If t is negative, ray started inside sphere so clamp t to zero
+        if t < 0:
+            t = 0
+        return t
 
     def translate(self, position):
         return Circle(self._c + position, self._r)
