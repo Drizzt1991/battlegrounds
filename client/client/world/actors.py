@@ -66,4 +66,27 @@ class Character(Actor):
         else:
             move = Vector(0, 0)
         # Move character position
-        self._position += move * (dt * CHARACTER_SPEED)
+        self._apply_collision(move * (dt * CHARACTER_SPEED))
+
+    def _apply_collision(self, move):
+        """ Perform movement by described vector, but check for collision with
+            other objects.
+        """
+        new_position = self._position + move
+        # Check if move is legal
+        intersects = self._world.query_props_intersection(
+            new_position, self.shape)
+        # Invalid move
+        li = len(intersects)
+        if li == 1:
+            # We can resolve contact for 1 object
+            new_move = intersects[0].resolve_movement(move)
+            new_position = self._position + new_move
+        elif li > 1:
+            # For 2 and more collisions we can't perform movement
+            new_position = self._position
+        self._position = new_position
+
+        # Moving circle problem. Tunneling?
+        # BVH/BSP interface for queries. Implement 2 at least
+        # Movement should be locked and only after resolved

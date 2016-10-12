@@ -25,6 +25,6 @@ class BaseShape(object):
 class BaseIntersection(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, shape1, shape2):
-        self.shape1 = shape1
-        self.shape2 = shape2
+    def __init__(self, shape, other):
+        self.shape = shape
+        self.other = other

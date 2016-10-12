@@ -24,6 +24,16 @@ class World(ABCWorld):
                 actor.tick(period)
             self._timer += period
 
+    def query_props_intersection(self, position, shape):
+        intersections = []
+        for prop in self._props:
+            # Translate query shape to prop coordinates
+            tshape = shape.translate(position - prop.position)
+            intersection = prop.shape.intersects(tshape)
+            if intersection is not None:
+                intersections.append(intersection)
+        return intersections
+
     @property
     def props(self):
         return self._props

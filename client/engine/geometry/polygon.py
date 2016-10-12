@@ -1,6 +1,25 @@
+from .aabb import AABB
 from .shape import BaseIntersection, BaseShape
 from .utils import orient, seg_distance
 from .vector import Vector
+
+
+def classify_polygon(points):
+    """ Factory for polygons, will analyze points and return an instance of
+        this polygon
+    """
+    if len(points) == 3:
+        if orient(*points) > 0:
+            points.reverse()
+        return Triangle(points)
+    if len(points) == 4:
+        # TEST AABB
+        a, b, c, d = sorted(points, key=lambda k: (k.x, k.y))
+        if a.x == b.x and c.x == d.x and a.y == c.y and b.y == d.y:
+            # Check for ribbon case
+            if (points.index(a) - points.index(d)) % 2 == 0:
+                return AABB(a, d)
+    raise NotImplementedError()
 
 
 class TriangleIntersection(BaseIntersection):

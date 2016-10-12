@@ -10,6 +10,9 @@ class AABBIntersection(BaseIntersection):
 
 
 class AABB(BaseShape):
+    """ Axis Alligned Bounding Box. Rectangle with edges alligned with the
+        x and y axes.
+    """
 
     def __init__(self, min, max):
         assert isinstance(min, Vector)

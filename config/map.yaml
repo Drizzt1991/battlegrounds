@@ -4,3 +4,23 @@ props:
     center: [0, 0]
     radius: 20
   position: [100, 100]
+- shape:
+    type: circle
+    center: [0, 0]
+    radius: 20
+  position: [50, 100]
+- shape:
+    type: circle
+    center: [0, 0]
+    radius: 10
+  position: [50, 200]
+- shape:
+    type: circle
+    center: [0, 0]
+    radius: 5
+  position: [30, 40]
+
+# - shape:
+#     type: polygon
+#     points: [[0, 0], [10, 0], [10, 10], [0, 10]]
+#   position: [-100, 100]

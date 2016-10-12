@@ -1,9 +1,46 @@
+import math
+
 from .shape import BaseIntersection, BaseShape
-from .vector import Vector
+from .vector import Vector, EPSILON2
+from .utils import orient
 
 
 class CircleIntersection(BaseIntersection):
-    pass
+
+    def __init__(self, shape, other, touch):
+        self.shape = shape
+        self.other = other
+        self.touch = touch
+
+    def resolve_movement(self, movement):
+        # Change the task to movement of point against a bigger circle
+        initial_center = (self.other._c - movement)
+        s = initial_center - self.shape._c
+        r = self.other._r + self.shape._r
+        v = movement
+        c = s.dot(s) - r * r
+        if c > 0:
+            # Compute the determinant for movement equation
+            # (v · v)t2 + 2(v · s)t + (s · s − r ^ 2) = 0
+            a = v.dot(v)
+            b = v.dot(s)
+            d = b * b - a * c
+            time_of_contact = (-b - math.sqrt(d)) / a
+            assert time_of_contact > 0 and time_of_contact <= 1
+        else:
+            # Circle was intersecting before movement
+            time_of_contact = 0
+        processed = movement * time_of_contact
+        # correction_len = movement.length() * (1 - time_of_contact)
+
+        # Calculate correction vector
+        if orient(Vector(0, 0), s, movement) > 0:
+            normal = s.rotate_deg(90)
+        else:
+            normal = s.rotate_deg(-90)
+        normal = normal.unit()
+        correction = normal * (normal.dot(movement) * (1 - time_of_contact))
+        return processed + correction
 
 
 class Circle(BaseShape):
@@ -48,4 +85,7 @@ class Circle(BaseShape):
             d2 = self._c.distance2(other._c)
             r2 = (self._r + other._r) ** 2
             if d2 <= r2:
-                return CircleIntersection(self, other)
+                return CircleIntersection(self, other, r2 - d2 < EPSILON2)
+
+    def translate(self, position):
+        return Circle(self._c + position, self._r)

@@ -1,4 +1,4 @@
-from engine.geometry import Circle, Vector
+from engine.geometry import Circle, Vector, classify_polygon
 
 from .props import SimpleProp
 
@@ -7,6 +7,11 @@ def shape_from_config(shape_conf):
     if shape_conf['type'] == "circle":
         x, y = shape_conf['center']
         return Circle(Vector(x, y), shape_conf['radius'])
+    if shape_conf['type'] == "polygon":
+        points = []
+        for x, y in shape_conf['points']:
+            points.append(Vector(x, y))
+        return classify_polygon(points)
     else:
         raise ValueError(shape_conf['type'])
 
