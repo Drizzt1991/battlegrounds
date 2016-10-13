@@ -1,4 +1,5 @@
 from .aabb import AABB
+from .circle import Circle
 from .shape import BaseIntersection, BaseShape
 from .utils import orient, seg_distance
 from .vector import Vector
@@ -23,7 +24,18 @@ def classify_polygon(points):
 
 
 class TriangleIntersection(BaseIntersection):
-    pass
+
+    def __init__(self, shape, other, closest):
+        self.shape = shape
+        self.other = other
+        self._closest = closest
+
+    def resolve_movement(self, movement):
+        force = self._closest - self.other.center
+        d = force.length()
+        penetration = self.other.radius - d
+        correction = penetration * force.unit()
+        return movement - correction
 
 
 class Triangle(BaseShape):
@@ -105,6 +117,12 @@ class Triangle(BaseShape):
         if other is x:
             return -1
         return x.distance(other)
+
+    def intersects(self, other):
+        if isinstance(other, Circle):
+            closest = self._closest_point(other.center)
+            if ((closest.distance2(other.center) - other.radius ** 2) < 0):
+                return TriangleIntersection(self, other, closest)
 
 
 class PolygonIntersection(BaseIntersection):

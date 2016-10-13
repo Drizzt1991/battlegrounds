@@ -46,6 +46,18 @@ class Scene(object):
         )
         glPopMatrix()
 
+    def draw_shape_triangle(self, triangle, position):
+        glPushMatrix()
+        glTranslatef(position.x, position.y, 0)
+        points = []
+        for point in triangle.points:
+            points.extend((point.x, point.y))
+        draw(
+            3, GL_LINE_LOOP,
+            ('v2f', points)
+        )
+        glPopMatrix()
+
     def draw_rotator(self, rotation, position):
         end = position + rotation * ROTATOR_LENGTH
         draw(

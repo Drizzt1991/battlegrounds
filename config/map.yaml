@@ -24,3 +24,8 @@ props:
     type: polygon
     points: [[0, 0], [10, 0], [10, 10], [0, 10]]
   position: [-100, 100]
+
+- shape:
+    type: polygon
+    points: [[-100, -50], [-100, -100], [-50, 50]]
+  position: [0, 0]
