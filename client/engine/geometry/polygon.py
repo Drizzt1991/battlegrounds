@@ -92,6 +92,18 @@ class PolygonIntersection(BaseIntersection):
     pass
 
 
+def _sat_test(poly1, poly2, normal):
+    sp = []  # projections of self's vertexes onto line n
+    for v in poly1.points:
+        sp.append(normal.dot(v))
+    op = []  # projections of other's vertexes onto line n
+    for v in poly2.points:
+        op.append(normal.dot(v))
+    if max(op) < min(sp) or min(op) > max(sp):
+        return False
+    return True
+
+
 class Polygon(BaseShape):
     """(Assuming that the polygon is convex and ordered counter-clockwise)"""
 
@@ -131,24 +143,22 @@ class Polygon(BaseShape):
 
     def intersects(self, other):
         assert isinstance(other, Polygon)
-        ns = []  # list of normals to each edge of both polygons
-        for i in range(0, len(self.points) - 1):
-            ns.append(Vector(self.points[i + 1].y - self.points[i].y,
-                             self.points[i].x - self.points[i + 1].x))
-        ns.append(Vector(self.points[i].y - self.points[0].y,
-                         self.points[0].x - self.points[i].x))
-        for i in range(0, len(other.points) - 1):
-            ns.append(Vector(other.points[i + 1].y - other.points[i].y,
-                             other.points[i].x - other.points[i + 1].x))
-        ns.append(Vector(other.points[i].y - other.points[0].y,
-                         other.points[0].x - other.points[i].x))
-        for n in ns:
-            sp = []  # projections of self's vertexes onto line n
-            for v in self.points:
-                sp.append(v.dot(n))
-            op = []  # projections of other's vertexes onto line n
-            for v in other.points:
-                op.append(v.dot(n))
-            if max(op) < min(sp) or min(op) > max(sp):
+        # Check our polygon normal's
+        points = self._points
+        prev_point = points[-1]
+        for point in points:
+            normal = (point - prev_point).rotate_deg(90)
+            if not _sat_test(self, other, normal):
                 return None
+            prev_point = point
+
+        # Check other polygon's normals
+        points = other._points
+        prev_point = points[-1]
+        for point in points:
+            normal = (point - prev_point).rotate_deg(90)
+            if not _sat_test(self, other, normal):
+                return None
+            prev_point = point
+
         return PolygonIntersection(self, other)
