@@ -61,7 +61,10 @@ class Circle(BaseShape):
     def __eq__(self, other):
         if isinstance(other, Circle):
             return self._r == other._r and self._c == other._c
-        raise NotImplemented
+        return False
+
+    def __repr__(self):
+        return "Circle({}, {})".format(self._c, self._r)
 
     def contains(self, other):
         assert isinstance(other, Vector)

@@ -45,6 +45,15 @@ class Triangle(BaseShape):
         assert orient(*points) < 0
         self._a, self._b, self._c = points
 
+    def __eq__(self, other):
+        if isinstance(other, Triangle):
+            return self._a == other._a and self._b == other._b and \
+                self._c == other._c
+        raise NotImplemented
+
+    def __repr__(self):
+        return "Triangle({})".format(list(self.points))
+
     @property
     def points(self):
         return (self._a, self._b, self._c)

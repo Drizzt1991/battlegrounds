@@ -2,8 +2,8 @@ import math
 
 from .circle import Circle
 from .shape import BaseIntersection, BaseShape
-from .vector import Vector, EPSILON
 from .utils import orient
+from .vector import EPSILON, Vector
 
 
 class AABBIntersection(BaseIntersection):
@@ -55,11 +55,14 @@ class AABB(BaseShape):
         x and y axes.
     """
 
+    __slots__ = ("_min", "_max")
+
     def __init__(self, min, max):
         assert isinstance(min, Vector)
         assert isinstance(max, Vector)
         self._min = min
         self._max = max
+        super().__init__()
 
     @property
     def min(self):
@@ -69,9 +72,26 @@ class AABB(BaseShape):
     def max(self):
         return self._max
 
+    @property
+    def center(self):
+        return Vector((self._min.x + self._max.x) / 2,
+                      (self._min.y + self._max.y) / 2)
+
+    @property
+    def width(self):
+        return (self._max.x - self._min.x) / 2
+
+    @property
+    def height(self):
+        return (self._max.y - self._min.y) / 2
+
     def __eq__(self, other):
         if isinstance(other, AABB):
             return self._min == other._min and self._max == other._max
+        return False
+
+    def __repr__(self):
+        return "AABB({}, {})".format(self._min, self._max)
 
     def contains(self, other):
         assert isinstance(other, Vector)
@@ -83,11 +103,12 @@ class AABB(BaseShape):
 
     def distance2(self, other):
         assert isinstance(other, Vector)
-        c = Vector((self._min.x + self._max.x) / 2,
-                   (self._min.y + self._max.y) / 2)
-        dx = max(abs(other.x - c.x) - (self._max.x - self._min.x) / 2, 0)
-        dy = max(abs(other.y - c.y) - (self._max.y - self._min.y) / 2, 0)
-        return dx**2 + dy**2
+        c = self.center
+        w = self.width
+        h = self.height
+        dx = max(math.fabs(other.x - c.x) - w, 0)
+        dy = max(math.fabs(other.y - c.y) - h, 0)
+        return dx ** 2 + dy ** 2
 
     def distance(self, other):
         return math.sqrt(self.distance2(other))

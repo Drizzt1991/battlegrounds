@@ -5,6 +5,11 @@ class BaseShape(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
+    def bbox(self):
+        """ Return an axis aligned bounding box for shape """
+        raise NotImplementedError()
+
+    @abstractmethod
     def contains(self, vector):
         """ Containment test for point in shape. Returns True or False """
         raise NotImplementedError()
