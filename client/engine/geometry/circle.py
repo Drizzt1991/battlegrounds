@@ -1,8 +1,8 @@
 import math
 
 from .shape import BaseIntersection, BaseShape
-from .vector import Vector
 from .utils import orient
+from .vector import Vector
 
 
 class CircleIntersection(BaseIntersection):
