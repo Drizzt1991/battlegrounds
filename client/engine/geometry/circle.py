@@ -58,6 +58,13 @@ class Circle(BaseShape):
     def radius(self):
         return self._r
 
+    def bbox(self):
+        c = self._c
+        r = self._r
+        min_x, min_y = c.x - r, c.y - r
+        max_x, max_y = c.x + r, c.y + r
+        return AABB(Vector(min_x, min_y), Vector(max_x, max_y))
+
     def __eq__(self, other):
         if isinstance(other, Circle):
             return self._r == other._r and self._c == other._c
@@ -111,3 +118,7 @@ class Circle(BaseShape):
 
     def translate(self, position):
         return Circle(self._c + position, self._r)
+
+
+# Circular import
+from .aabb import AABB  # noqa

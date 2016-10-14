@@ -46,3 +46,7 @@ class TestAABB(unittest.TestCase):
 
         self.assertEqual(rect.intersects(AABB(zr, Vector(1, 2))), None)
         self.assertTrue(rect.intersects(AABB(zr, Vector(3, 2))))
+
+    def test_bbox(self):
+        rect = AABB(Vector(2, 2), Vector(6, 4))
+        self.assertEqual(rect, rect.bbox())

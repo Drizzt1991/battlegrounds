@@ -1,6 +1,5 @@
 import math
 
-from .circle import Circle
 from .shape import BaseIntersection, BaseShape
 from .utils import orient
 from .vector import EPSILON, Vector
@@ -85,6 +84,9 @@ class AABB(BaseShape):
     def height(self):
         return (self._max.y - self._min.y) / 2
 
+    def bbox(self):
+        return self
+
     def __eq__(self, other):
         if isinstance(other, AABB):
             return self._min == other._min and self._max == other._max
@@ -168,3 +170,6 @@ class AABB(BaseShape):
         elif p_y > self._max.y:
             p_y = self._max.y
         return Vector(p_x, p_y)
+
+# Circular import
+from .circle import Circle  # noqa

@@ -1,8 +1,10 @@
+from .aabb import AABB
 from .circle import Circle
-from .vector import Vector
 from .polygon import Triangle, classify_polygon
+from .vector import Vector
 
 __all__ = [
+    "AABB",
     "Vector",
     "Circle",
     "Triangle",

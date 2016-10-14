@@ -54,6 +54,12 @@ class Triangle(BaseShape):
     def __repr__(self):
         return "Triangle({})".format(list(self.points))
 
+    def bbox(self):
+        a, b, c = self._a, self._b, self._c
+        min_x, min_y = min(a.x, b.x, c.x), min(a.y, b.y, c.y)
+        max_x, max_y = max(a.x, b.x, c.x), max(a.y, b.y, c.y)
+        return AABB(Vector(min_x, min_y), Vector(max_x, max_y))
+
     @property
     def points(self):
         return (self._a, self._b, self._c)

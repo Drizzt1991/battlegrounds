@@ -1,7 +1,6 @@
 import unittest
 
-from engine.geometry import Vector
-from engine.geometry.polygon import Triangle
+from engine.geometry import AABB, Triangle, Vector
 
 
 class TestTriangle(unittest.TestCase):
@@ -29,3 +28,7 @@ class TestTriangle(unittest.TestCase):
         self.assertEqual(t.distance(Vector(-2, -1)), 5)
         # Outside in a edge voronnoi region
         self.assertEqual(t.distance(Vector(3, 0)), 2)
+
+    def test_triangle_bbox(self):
+        t = Triangle([Vector(2, 2), Vector(4, 4), Vector(4, 2)])
+        self.assertEqual(t.bbox(), AABB(Vector(2, 2), Vector(4, 4)))
