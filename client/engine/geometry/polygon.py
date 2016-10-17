@@ -117,27 +117,33 @@ class Polygon(BaseShape):
 
     def contains(self, other):
         assert isinstance(other, Vector)
+        points = self._points
+        pivot = points[0]
+#   lo and hi, along with pivot, are meant to determine the span of edges
+#   that may be facing point other.
         lo = 0
-        hi = len(self.points)
+        hi = len(points)
+#   The point here is to limit us to the span of a single edge.
+#   As long as lo + 1 < hi, there is at least one point between lo and hi;
+#   as such, the cycle needs to continue.
         while (lo + 1 < hi):
             mid = (lo + hi) // 2
-            if orient(self.points[0], self.points[mid], other) == 0:
-                lx = abs(other.x - self.points[0].x)
-                lx += abs(self.points[mid].x - other.x)
-                ly = abs(other.y - self.points[0].y)
-                ly += abs(self.points[mid].y - other.y)
-                if (abs(self.points[mid].x - self.points[0].x) == lx and
-                    abs(self.points[mid].y - self.points[0].y) == ly):  # noqa
-                    return True
-                else:
-                    return False
-            elif orient(self.points[0], self.points[mid], other) < 0:
+            ori = orient(pivot, points[mid], other)
+#   If point other is located on the line pivot-points[mid], we only need to
+#   check if it lies on the segment pivot-points[mid] or outside it.
+            if ori == 0:
+                min_x = min(points[mid].x, pivot.x)
+                min_y = min(points[mid].y, pivot.y)
+                max_x = max(points[mid].x, pivot.x)
+                max_y = max(points[mid].y, pivot.y)
+                return min_x <= other.x <= max_x and min_y <= other.y <= max_y
+            elif ori < 0:
                 hi = mid
             else:
                 lo = mid
-        if (lo == 0 or hi == len(self.points)):
+        if (lo == 0 or hi == len(points)):
             return False
-        if orient(self.points[lo], self.points[hi], other) < 0:
+        if orient(points[lo], points[hi], other) < 0:
             return False
         return True
 
