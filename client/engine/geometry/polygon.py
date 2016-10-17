@@ -119,18 +119,19 @@ class Polygon(BaseShape):
         assert isinstance(other, Vector)
         points = self._points
         pivot = points[0]
-#   lo and hi, along with pivot, are meant to determine the span of edges
-#   that may be facing point other.
+        # lo and hi, along with pivot, are meant to determine the span of
+        # edges that may be facing point other.
         lo = 0
         hi = len(points)
-#   The point here is to limit us to the span of a single edge.
-#   As long as lo + 1 < hi, there is at least one point between lo and hi;
-#   as such, the cycle needs to continue.
+        # The point here is to limit us to the span of a single edge.
+        # As long as lo + 1 < hi, there is at least one point between lo
+        # and hi; as such, the cycle needs to continue.
         while (lo + 1 < hi):
             mid = (lo + hi) // 2
             ori = orient(pivot, points[mid], other)
-#   If point other is located on the line pivot-points[mid], we only need to
-#   check if it lies on the segment pivot-points[mid] or outside it.
+            # If point other is located on the line pivot-points[mid],
+            # we only need to check if it lies on the segment
+            # pivot-points[mid] or outside it.
             if ori == 0:
                 min_x = min(points[mid].x, pivot.x)
                 min_y = min(points[mid].y, pivot.y)
