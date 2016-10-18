@@ -51,6 +51,9 @@ class Triangle(BaseShape):
                 self._c == other._c
         raise NotImplemented
 
+    def __hash__(self):
+        return hash((self.__class__, self._a, self._b, self._c))
+
     def __repr__(self):
         return "Triangle({})".format(list(self.points))
 
@@ -161,7 +164,27 @@ class Polygon(BaseShape):
 
     def __init__(self, points):
         assert len(points) >= 3
-        self._points = points
+        self._points = tuple(points)
+
+    def __eq__(self, other):
+        if isinstance(other, Polygon):
+            return self._points == other._points
+        raise NotImplemented
+
+    def __hash__(self):
+        return hash((self.__class__, self._points))
+
+    def __repr__(self):
+        return "Polygon({})".format(list(self.points))
+
+    def bbox(self):
+        axis = [p.x for p in self._points]
+        min_x = min(axis)
+        max_x = max(axis)
+        axis = [p.y for p in self._points]
+        min_y = min(axis)
+        max_y = max(axis)
+        return AABB(Vector(min_x, min_y), Vector(max_x, max_y))
 
     @property
     def points(self):

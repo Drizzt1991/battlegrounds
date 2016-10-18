@@ -70,6 +70,9 @@ class Circle(BaseShape):
             return self._r == other._r and self._c == other._c
         return False
 
+    def __hash__(self):
+        return hash((self.__class__, self._c, self._r))
+
     def __repr__(self):
         return "Circle({}, {})".format(self._c, self._r)
 

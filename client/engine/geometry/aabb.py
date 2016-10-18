@@ -92,6 +92,9 @@ class AABB(BaseShape):
             return self._min == other._min and self._max == other._max
         return False
 
+    def __hash__(self):
+        return hash((self._min, self._max))
+
     def __repr__(self):
         return "AABB({}, {})".format(self._min, self._max)
 
@@ -170,6 +173,20 @@ class AABB(BaseShape):
         elif p_y > self._max.y:
             p_y = self._max.y
         return Vector(p_x, p_y)
+
+    def union(self, other):
+        """ Combine 2 AABB's to produce one, that contains both
+        """
+        assert isinstance(other, AABB)
+        min1, min2, max1, max2 = self._min, other._min, self._max, other._max
+        min_x = min(min1.x, min2.x)
+        min_y = min(min1.y, min2.y)
+        max_x = max(max1.x, max2.x)
+        max_y = max(max1.y, max2.y)
+        return AABB(Vector(min_x, min_y), Vector(max_x, max_y))
+
+    def area(self):
+        return (self._max.x - self._min.x) * (self._max.y - self.min.y)
 
 # Circular import
 from .circle import Circle  # noqa
