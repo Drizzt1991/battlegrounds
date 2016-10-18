@@ -1,5 +1,5 @@
 from .shape import BaseIntersection, BaseShape
-from .utils import orient
+from .utils import orient, seg_distance
 from .vector import Vector
 
 
@@ -115,7 +115,7 @@ class Polygon(BaseShape):
     def points(self):
         return self._points
 
-    def contains(self, other):
+    def _contains(self, other):
         assert isinstance(other, Vector)
         points = self._points
         pivot = points[0]
@@ -133,20 +133,32 @@ class Polygon(BaseShape):
             # we only need to check if it lies on the segment
             # pivot-points[mid] or outside it.
             if ori == 0:
-                min_x = min(points[mid].x, pivot.x)
-                min_y = min(points[mid].y, pivot.y)
-                max_x = max(points[mid].x, pivot.x)
-                max_y = max(points[mid].y, pivot.y)
-                return min_x <= other.x <= max_x and min_y <= other.y <= max_y
+                if seg_distance(pivot, points[mid], other) > 0:
+                    return -1
+                elif mid == 1 or mid == len(points) - 1:
+                    return 0
+                elif other == pivot or other == points[mid]:
+                    return 0
+                else:
+                    return 1
+
             elif ori < 0:
                 hi = mid
             else:
                 lo = mid
+        # distance method requires information of whether the point lies on
+        # the border or strictly inside the polygon so immediately returning
+        # True/False is not an option.
+        # A negative return value denotes that the point is outside the polygon
         if (lo == 0 or hi == len(points)):
+            return -1
+        return orient(points[lo], points[hi], other)
+
+    def contains(self, other):
+        if self._contains(other) < 0:
             return False
-        if orient(points[lo], points[hi], other) < 0:
-            return False
-        return True
+        else:
+            return True
 
     def intersects(self, other):
         assert isinstance(other, Polygon)
@@ -169,3 +181,95 @@ class Polygon(BaseShape):
             prev_point = point
 
         return PolygonIntersection(self, other)
+
+    def distance(self, other):
+        assert isinstance(other, Vector)
+        points = self._points
+        le = len(points)
+        min_x = 0
+        min_y = 0
+        max_x = 0
+        max_y = 0
+        for i in range(1, le):
+            if points[min_x].x > points[i].x:
+                min_x = i
+            if points[max_x].x < points[i].x:
+                max_x = i
+            if points[min_y].y > points[i].y:
+                min_y = i
+            if points[max_y].y < points[i].y:
+                max_y = i
+        # Determining which Voronoi region of the AABB encasing the polygon
+        # the point of interest is located in to better choose the pivot point.
+        if other.x < points[min_x].x:
+            if other.y < points[min_y].y:
+                # Point is to the left and below the polygon in the coordinate
+                # system
+                if min_x > min_y:
+                    pivot = (min_x - le + min_y) // 2
+                else:
+                    pivot = (min_x + min_y) // 2
+            elif other.y > points[max_y].y:
+                # to the left and above
+                if max_y > min_x:
+                    pivot = (max_y - le + min_x) // 2
+                else:
+                    pivot = (max_y + min_x) // 2
+            else:
+                # straight to the left
+                pivot = min_x
+        elif other.x > points[max_x].x:
+            if other.y < points[min_y].y:
+                # to the right and below
+                if min_y > max_x:
+                    pivot = (min_y - le + max_x) // 2
+                else:
+                    pivot = (min_y + max_x) // 2
+            elif other.y > points[max_y].y:
+                # to the right and above
+                if max_x > max_y:
+                    pivot = (max_x - le + max_y) // 2
+                else:
+                    pivot = (max_x + max_y) // 2
+            else:
+                # straight to the right
+                pivot = max_x
+        else:
+            if other.y < points[min_y].y:
+                # straight below
+                pivot = min_y
+            elif other.y > points[max_y].y:
+                # straight above
+                pivot = max_y
+            else:
+                # Point may be within the polygon
+                check = self._contains(other)
+                if check > 0:
+                    return -1
+                    # Point inside polygon
+                elif check == 0:
+                    return 0
+                    # Point lies on the edge
+                else:
+                    pivot = 0
+                    # Point is near polygon, optimizing the pivot point
+                    # selection becomes expensive
+        dist = points[pivot].distance2(other)
+        while True:
+            cur_dist = points[pivot - 1].distance2(other)
+            if cur_dist < dist:
+                pivot -= 1
+                dist = cur_dist
+            else:
+                break
+        while True:
+            if pivot == le - 1:
+                pivot = pivot - le
+            cur_dist = points[pivot + 1].distance2(other)
+            if cur_dist < dist:
+                pivot += 1
+                dist = cur_dist
+            else:
+                break
+        return min(dist, seg_distance(points[pivot], points[pivot - 1], other),
+                   seg_distance(points[pivot], points[pivot + 1], other))
