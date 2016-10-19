@@ -49,3 +49,16 @@ def incircle(a, b, c, d):
                             [b.x, b.y, b.x * b.x + b.y * b.y, 1],
                             [c.x, c.y, c.x * c.x + c.y * c.y, 1],
                             [d.x, d.y, d.x * d.x + d.y * d.y, 1]], 1))
+
+
+def seg_distance(a, b, c):
+    "Calculates the distance between segment AB and point C."
+
+    ab = b - a
+    ac = c - a
+    len2_ab = ab.length2()
+    if len2_ab == 0:
+        return c.distance(a)
+    t = max(0, min(1, ab.dot(ac) / len2_ab))
+    c_proj = a + t * ab
+    return c.distance(c_proj)
