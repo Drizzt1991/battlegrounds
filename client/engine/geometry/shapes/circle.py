@@ -1,8 +1,8 @@
 import math
 
 from .shape import BaseIntersection, BaseShape
-from .utils import orient
-from .vector import Vector
+from ..utils import orient
+from ..vector import Vector
 
 
 class CircleIntersection(BaseIntersection):
@@ -94,10 +94,14 @@ class Circle(BaseShape):
     def intersects(self, other):
         assert isinstance(other, BaseShape)
         if isinstance(other, Circle):
-            d2 = self._c.distance2(other._c)
-            r2 = (self._r + other._r) ** 2
-            if d2 <= r2:
-                return CircleIntersection(self, other)
+            return intersect_circle_circle(self, other)
+        if isinstance(other, AABB):
+            return intersect_aabb_circle(other, self)
+        if isinstance(other, Triangle):
+            return intersect_circle_triangle(self, other)
+        if isinstance(other, Polygon):
+            return intersect_circle_polygon(self, other)
+        raise ValueError(other)
 
     def time_of_impact(self, point, direction):
         m = point - self._c
@@ -125,3 +129,10 @@ class Circle(BaseShape):
 
 # Circular import
 from .aabb import AABB  # noqa
+from .polygon import Polygon, Triangle  # noqa
+from .intersection import (  # noqa
+    intersect_circle_circle,
+    intersect_aabb_circle,
+    intersect_circle_triangle,
+    intersect_circle_polygon
+)

@@ -1,7 +1,6 @@
 import unittest
 
-from engine.geometry import Vector
-from engine.geometry.polygon import AABB, Triangle, classify_polygon
+from engine.geometry import AABB, Triangle, Vector, classify_polygon
 
 
 class TestPolygon(unittest.TestCase):

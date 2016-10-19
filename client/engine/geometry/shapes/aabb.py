@@ -1,8 +1,8 @@
 import math
 
 from .shape import BaseIntersection, BaseShape
-from .utils import orient
-from .vector import EPSILON, Vector
+from ..utils import orient
+from ..vector import EPSILON, Vector
 
 
 class AABBIntersection(BaseIntersection):
@@ -119,16 +119,15 @@ class AABB(BaseShape):
         return math.sqrt(self.distance2(other))
 
     def intersects(self, other):
-        assert isinstance(other, BaseShape)
         if isinstance(other, AABB):
-            if (other.min.x > self.max.x or other.min.y > self.max.y):
-                return None
-            if (other.max.x < self.min.x or other.max.y < self.min.y):
-                return None
-        if isinstance(other, Circle):
-            if (self.distance2(other.center) - other.radius**2 > 0):
-                return None
-        return AABBIntersection(self, other)
+            return intersect_aabb_aabb(self, other)
+        elif isinstance(other, Circle):
+            return intersect_aabb_circle(self, other)
+        elif isinstance(other, Polygon):
+            return intersect_aabb_polygon(self, other)
+        elif isinstance(other, Triangle):
+            return intersect_aabb_triangle(self, other)
+        raise ValueError(other)
 
     def time_of_impact(self, point, direction):
         tmin = 0
@@ -190,3 +189,10 @@ class AABB(BaseShape):
 
 # Circular import
 from .circle import Circle  # noqa
+from .polygon import Polygon, Triangle  # noqa
+from .intersection import (  # noqa
+    intersect_aabb_aabb,
+    intersect_aabb_circle,
+    intersect_aabb_triangle,
+    intersect_aabb_polygon
+)

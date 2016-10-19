@@ -1,7 +1,6 @@
 import unittest
 
-from engine.geometry.polygon import Polygon
-from engine.geometry import Vector
+from engine.geometry import Polygon, Vector
 
 
 class TestPolygon(unittest.TestCase):

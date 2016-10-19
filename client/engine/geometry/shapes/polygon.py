@@ -1,8 +1,8 @@
 from .aabb import AABB
 from .circle import Circle
 from .shape import BaseIntersection, BaseShape
-from .utils import orient, seg_distance
-from .vector import Vector
+from ..utils import orient, seg_distance
+from ..vector import Vector
 
 
 def classify_polygon(points):
@@ -10,7 +10,7 @@ def classify_polygon(points):
         this polygon
     """
     if len(points) == 3:
-        if orient(*points) > 0:
+        if orient(*points) < 0:
             points.reverse()
         return Triangle(points)
     if len(points) == 4:
@@ -39,10 +39,11 @@ class TriangleIntersection(BaseIntersection):
 
 
 class Triangle(BaseShape):
+    """ Same as polygon we assume points are counter-clockwise """
 
     def __init__(self, points):
         assert len(points) == 3
-        assert orient(*points) < 0
+        assert orient(*points) > 0
         self._a, self._b, self._c = points
 
     def __eq__(self, other):
@@ -70,11 +71,11 @@ class Triangle(BaseShape):
     def contains(self, other):
         assert isinstance(other, Vector)
         a, b, c = self._a, self._b, self._c
-        if orient(a, b, other) > 0:
+        if orient(a, b, other) < 0:
             return False
-        if orient(b, c, other) > 0:
+        if orient(b, c, other) < 0:
             return False
-        if orient(c, a, other) > 0:
+        if orient(c, a, other) < 0:
             return False
         return True
 
@@ -138,29 +139,22 @@ class Triangle(BaseShape):
 
     def intersects(self, other):
         if isinstance(other, Circle):
-            closest = self._closest_point(other.center)
-            if ((closest.distance2(other.center) - other.radius ** 2) < 0):
-                return TriangleIntersection(self, other, closest)
+            return intersect_circle_triangle(other, self)
+        if isinstance(other, Polygon):
+            return intersect_triangle_polygon(self, other)
+        elif isinstance(other, Triangle):
+            return intersect_triangle_triangle(self, other)
+        elif isinstance(other, AABB):
+            return intersect_aabb_triangle(other, self)
+        raise ValueError(other)
 
 
 class PolygonIntersection(BaseIntersection):
     pass
 
 
-def _sat_test(poly1, poly2, normal):
-    sp = []  # projections of self's vertexes onto line n
-    for v in poly1.points:
-        sp.append(normal.dot(v))
-    op = []  # projections of other's vertexes onto line n
-    for v in poly2.points:
-        op.append(normal.dot(v))
-    if max(op) < min(sp) or min(op) > max(sp):
-        return False
-    return True
-
-
 class Polygon(BaseShape):
-    """(Assuming that the polygon is convex and ordered counter-clockwise)"""
+    """ We assume that the polygon is convex and ordered counter-clockwise """
 
     def __init__(self, points):
         assert len(points) >= 3
@@ -236,26 +230,15 @@ class Polygon(BaseShape):
             return True
 
     def intersects(self, other):
-        assert isinstance(other, Polygon)
-        # Check our polygon normal's
-        points = self._points
-        prev_point = points[-1]
-        for point in points:
-            normal = (point - prev_point).rotate_deg(90)
-            if not _sat_test(self, other, normal):
-                return None
-            prev_point = point
-
-        # Check other polygon's normals
-        points = other._points
-        prev_point = points[-1]
-        for point in points:
-            normal = (point - prev_point).rotate_deg(90)
-            if not _sat_test(self, other, normal):
-                return None
-            prev_point = point
-
-        return PolygonIntersection(self, other)
+        if isinstance(other, Polygon):
+            return intersect_polygon_polygon(self, other)
+        elif isinstance(other, Triangle):
+            return intersect_triangle_polygon(other, self)
+        elif isinstance(other, Circle):
+            return intersect_circle_polygon(other, self)
+        elif isinstance(other, AABB):
+            return intersect_aabb_polygon(other, self)
+        raise ValueError(other)
 
     def distance(self, other):
         assert isinstance(other, Vector)
@@ -348,3 +331,14 @@ class Polygon(BaseShape):
                 break
         return min(dist, seg_distance(points[pivot], points[pivot - 1], other),
                    seg_distance(points[pivot], points[pivot + 1], other))
+
+
+from .intersection import (  # noqa
+    intersect_triangle_triangle,
+    intersect_circle_triangle,
+    intersect_aabb_triangle,
+    intersect_triangle_polygon,
+    intersect_polygon_polygon,
+    intersect_circle_polygon,
+    intersect_aabb_polygon
+)

@@ -21,7 +21,7 @@ class StabObj:
 class TestDynamicAABB(unittest.TestCase):
 
     _shapes = {
-        'triangle': Triangle([Vector(0, 0), Vector(1, 1), Vector(1, 0)]),
+        'triangle': Triangle([Vector(0, 0), Vector(1, 0), Vector(1, 1)]),
         'circle': Circle(Vector(0, 0), radius=2),
         'aabb': AABB(Vector(-2, -2), Vector(-1, -1)),
         'poly': Polygon([
@@ -51,8 +51,6 @@ class TestDynamicAABB(unittest.TestCase):
         r = self._get_shapes(r)
         self.assertEqual(r, [self._shapes['aabb']])
         # Check many results
-        import pdb
-        pdb.set_trace()
         r = self.tree.query_shape(AABB(Vector(-2, -2), Vector(2, 2)))
         r = self._get_shapes(r)
         self.assertEqual(set(r), set([

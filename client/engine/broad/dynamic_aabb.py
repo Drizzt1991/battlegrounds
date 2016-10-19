@@ -1,5 +1,5 @@
 # Source http://www.randygaul.net/2013/08/06/dynamic-aabb-tree/
-from engine.geometry.shape import BaseShape
+from engine.geometry.shapes.shape import BaseShape
 
 from .abc import ABCBroadPhase
 

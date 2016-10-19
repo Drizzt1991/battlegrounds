@@ -6,7 +6,7 @@ from engine.geometry import AABB, Triangle, Vector
 class TestTriangle(unittest.TestCase):
 
     def test_triangle_contains(self):
-        t = Triangle([Vector(2, 2), Vector(4, 4), Vector(4, 2)])
+        t = Triangle([Vector(2, 2), Vector(4, 2), Vector(4, 4)])
         # Inside triangle
         self.assertTrue(t.contains(Vector(3.5, 3)))
         # On edge
@@ -17,7 +17,7 @@ class TestTriangle(unittest.TestCase):
         self.assertFalse(t.contains(Vector(2, 1)))
 
     def test_triangle_distance(self):
-        t = Triangle([Vector(2, 2), Vector(4, 4), Vector(4, 2)])
+        t = Triangle([Vector(2, 2), Vector(4, 2), Vector(4, 4)])
         # Inside triangle
         self.assertEqual(t.distance(Vector(3.5, 3)), -1)
         # On edge
@@ -30,5 +30,5 @@ class TestTriangle(unittest.TestCase):
         self.assertEqual(t.distance(Vector(3, 0)), 2)
 
     def test_triangle_bbox(self):
-        t = Triangle([Vector(2, 2), Vector(4, 4), Vector(4, 2)])
+        t = Triangle([Vector(2, 2), Vector(4, 2), Vector(4, 4)])
         self.assertEqual(t.bbox(), AABB(Vector(2, 2), Vector(4, 4)))
