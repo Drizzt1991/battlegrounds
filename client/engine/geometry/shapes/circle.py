@@ -96,7 +96,10 @@ class Circle(BaseShape):
         if isinstance(other, Circle):
             return intersect_circle_circle(self, other)
         if isinstance(other, AABB):
-            return intersect_aabb_circle(other, self)
+            res = intersect_aabb_circle(other, self)
+            if res is not None:
+                res.inverse()
+            return res
         if isinstance(other, Triangle):
             return intersect_circle_triangle(self, other)
         if isinstance(other, Polygon):

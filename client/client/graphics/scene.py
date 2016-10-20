@@ -1,6 +1,6 @@
 from pyglet.gl import (
     glPushMatrix, glPopMatrix, glTranslatef, gluNewQuadric, gluSphere,
-    GL_LINES, GL_LINE_LOOP
+    GL_LINES, GL_LINE_LOOP, GL_TRIANGLE_FAN
 )
 from pyglet.graphics import draw
 
@@ -55,6 +55,20 @@ class Scene(object):
         draw(
             3, GL_LINE_LOOP,
             ('v2f', points)
+        )
+        glPopMatrix()
+
+    def draw_shape_polygon(self, polygon, position):
+        glPushMatrix()
+        glTranslatef(position.x, position.y, 0)
+        points = polygon.points
+        p = []
+        for point in points:
+            p.extend((point.x, point.y))
+        draw(
+            len(points),
+            GL_TRIANGLE_FAN,
+            ('v2f', p)
         )
         glPopMatrix()
 

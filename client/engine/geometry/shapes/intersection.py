@@ -12,6 +12,33 @@
         manifold = intersect_aabb_aabb(a, b)
         assert manifold is not None
 
+    All functions assume, that both objects are already in the same coordinate
+    systems, and it's better to use local coordinates for more robustness.
+
+    Manifold's are objects, describing the collision. They are inversable,
+    meaning, that AABB-Circle manifold is the same as Circle-AABB with same
+    point sets. Manifolds can be split into 2 groups: Cirle and Polygon
+    manifolds.
+
+    `Cirlce` manifolds will always describe the collision based on center to
+    closest point vector. To push circle out of the collision (as if you do
+    a sweep, but without tunneling and point of impact):
+
+        # We assume, that shapes were not in intersecting before `move`
+        t = manifold.depth / move.length()
+        assert t <= 1, "Did objects intersect before movement?"
+        # Mitigate the movement vector based on penetration depth:
+        move = move * (1 - t)
+
+    To perform `sliding` of a cirlce to surface:
+
+        # Apply part of of the movement impulse as a `sliding` movement
+        # Note: normal is a unit vector, so we can just multiply.
+        correction = manifold.normal.rotate_deg(90) * t
+        return move + correction
+
+    `Polygon` manifolds are a bit more tricky to work with
+
 """
 from engine.geometry.vector import Vector
 
@@ -26,6 +53,16 @@ class Manifold:
         points = points
         depth = depth
         normal = normal
+
+
+class CircleManifold:
+
+    def __init__(self, depth, normal):
+        self.depth = depth
+        self.normal = normal
+
+    def inverse(self):
+        self.normal *= -1
 
 
 def _sat_test(points1, points2, normal):
@@ -49,9 +86,13 @@ def intersect_aabb_aabb(a: AABB, b: AABB) -> Manifold:
 
 
 def intersect_aabb_circle(aabb: AABB, circle: Circle) -> Manifold:
-    if (aabb.distance2(circle.center) - circle.radius**2 > 0):
+    c = circle.center
+    r = circle.radius
+    closest = aabb._closest_point(c)
+    d = closest.distance(c)
+    if d > r:
         return None
-    return Manifold()
+    return CircleManifold(depth=r - d, normal=(closest - c).unit())
 
 
 def intersect_aabb_triangle(aabb: AABB, triangle: Triangle) -> Manifold:
@@ -136,18 +177,21 @@ def intersect_aabb_polygon(aabb: AABB, polygon: Polygon) -> Manifold:
 
 
 def intersect_circle_circle(a: Circle, b: Circle) -> Manifold:
-    d2 = a._c.distance2(b._c)
-    r2 = (a._r + b._r) ** 2
-    if d2 > r2:
+    d = a._c.distance(b._c)
+    r = a._r + b._r
+    if d > r:
         return None
-    return Manifold()
+    return CircleManifold(depth=r - d, normal=(a._c - b._c).unit())
 
 
 def intersect_circle_triangle(circle: Circle, triangle: Triangle) -> Manifold:
     closest = triangle._closest_point(circle.center)
-    if ((closest.distance2(circle.center) - circle.radius ** 2) > 0):
+    c = circle.center
+    r = circle.radius
+    d = closest.distance(c)
+    if d > r:
         return None
-    return Manifold()
+    return CircleManifold(depth=r - d, normal=(c - closest).unit())
 
 
 def intersect_circle_polygon(circle: Circle, polygon: Polygon) -> Manifold:

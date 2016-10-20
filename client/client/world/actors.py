@@ -48,6 +48,11 @@ class Character(Actor):
     movement = ActorMovement()
 
     def tick(self, dt):
+        move = self._get_movement_vector(dt)
+        # Move character position
+        self._apply_collision(move * (dt * CHARACTER_SPEED))
+
+    def _get_movement_vector(self, dt):
         movement = self.movement
         # Rotate forward vector
         if movement.rotation:
@@ -65,8 +70,7 @@ class Character(Actor):
             move = movement.forward.rotate_deg(movement.strafe * 90)
         else:
             move = Vector(0, 0)
-        # Move character position
-        self._apply_collision(move * (dt * CHARACTER_SPEED))
+        return move
 
     def _apply_collision(self, move):
         """ Perform movement by described vector, but check for collision with
@@ -74,13 +78,14 @@ class Character(Actor):
         """
         new_position = self._position + move
         # Check if move is legal
-        intersects = self._world.query_props_intersection(
+        manifolds = self._world.query_props_intersection(
             new_position, self.shape)
         # Invalid move
-        li = len(intersects)
+        li = len(manifolds)
         if li == 1:
             # We can resolve contact for 1 object
-            new_move = intersects[0].resolve_movement(move)
+            new_move = self._resolve_movement(
+                manifolds[0], move)
             new_position = self._position + new_move
         elif li > 1:
             # For 2 and more collisions we can't perform movement
@@ -90,3 +95,7 @@ class Character(Actor):
         # Moving circle problem. Tunneling?
         # BVH/BSP interface for queries. Implement 2 at least
         # Movement should be locked and only after resolved
+
+    def _resolve_movement(self, manifold, move):
+        correction = manifold.normal * manifold.depth
+        return move + correction

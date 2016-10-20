@@ -5,6 +5,20 @@ from ..utils import orient, seg_distance
 from ..vector import Vector
 
 
+def _check_convex(points):
+    prev_edge = [points[-2], points[-1]]
+    for point in points:
+        o = orient(prev_edge[0], prev_edge[1], point)
+        if o > 0:
+            return False
+        elif o == 0:
+            raise ValueError("3 Points on single line {}".format(
+                (prev_edge[0], prev_edge[1], point)))
+        prev_edge.pop(0)
+        prev_edge.append(point)
+    return True
+
+
 def classify_polygon(points):
     """ Factory for polygons, will analyze points and return an instance of
         this polygon
@@ -20,7 +34,12 @@ def classify_polygon(points):
             # Check for ribbon case
             if (points.index(a) - points.index(d)) % 2 == 0:
                 return AABB(a, d)
-    raise NotImplementedError()
+    if not _check_convex(points):
+        # Try to reverse points, in case of clockwise input
+        points.reverse()
+        if not _check_convex(points):
+            raise NotImplementedError("Concave polygons not supported")
+    return Polygon(points)
 
 
 class TriangleIntersection(BaseIntersection):

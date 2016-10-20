@@ -29,7 +29,7 @@ class World(ABCWorld):
         for prop in self._props:
             # Translate query shape to prop coordinates
             tshape = shape.translate(position - prop.position)
-            intersection = prop.shape.intersects(tshape)
+            intersection = tshape.intersects(prop.shape)
             if intersection is not None:
                 intersections.append(intersection)
         return intersections
