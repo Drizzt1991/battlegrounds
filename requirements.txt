@@ -1,5 +1,7 @@
 pyyaml
 coverage
-nose
+pytest==3.0.3
+pytest-cov==2.4.0
+pytest-sugar==0.7.1
 pyglet
 flake8

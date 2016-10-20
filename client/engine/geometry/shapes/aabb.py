@@ -187,6 +187,12 @@ class AABB(BaseShape):
     def area(self):
         return (self._max.x - self._min.x) * (self._max.y - self.min.y)
 
+    def inflate(self, dx, dy=None):
+        if dy is None:
+            dy = dx
+        dv = Vector(dx, dy)
+        return AABB(self._min - dv, self._max + dv)
+
 # Circular import
 from .circle import Circle  # noqa
 from .polygon import Polygon, Triangle  # noqa

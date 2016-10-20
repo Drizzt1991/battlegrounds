@@ -1,4 +1,23 @@
-# Source http://www.randygaul.net/2013/08/06/dynamic-aabb-tree/
+"""
+    Basic concept described here:
+
+        http://www.randygaul.net/2013/08/06/dynamic-aabb-tree/
+
+    Other refs:
+        Formulas of how to insert/remove nodes are descibed in detail in
+        "Real Time Collision Detection" book, which has refs for further
+        reading on the topic
+        Implementation was more/less taken from here:
+
+            https://github.com/azrafe7/hxAABBTree
+
+        which is basically a more readable version of Box2d's implementation:
+
+            https://github.com/erincatto/Box2D/blob/master/Box2D/Box2D/Collision/b2DynamicTree.cpp
+
+"""
+
+
 from engine.geometry.shapes.shape import BaseShape
 
 from .abc import ABCBroadPhase
@@ -23,9 +42,10 @@ class LeafNode(object):
     leaf = True
     parent = None
 
-    def __init__(self, *, obj, aabb):
+    def __init__(self, *, node_id, obj, aabb):
         self.obj = obj
         self.aabb = aabb
+        self.node_id = node_id
 
     def __repr__(self):
         return "LeafNode({}, {})".format(self.obj, self.aabb)
@@ -35,17 +55,22 @@ class DynamicAABB(ABCBroadPhase):
 
     def __init__(self):
         self._root = None
+        self._leaves = {}  # Leaves only
+        self._next_id = 0  # Next leaf ID
 
     def add(self, obj):
         if not hasattr(obj, "shape") or not isinstance(obj.shape, BaseShape):
             raise ValueError(obj)
 
-        leaf_node = LeafNode(obj=obj, aabb=obj.shape.bbox())
+        leaf_node = LeafNode(
+            node_id=self._next_id, obj=obj, aabb=obj.shape.bbox())
+        self._next_id += 1
+        self._leaves[leaf_node.node_id] = leaf_node
         node = self._root
         # First insertion case
         if node is None:
             self._root = leaf_node
-            return
+            return leaf_node.node_id
         shape_aabb = leaf_node.aabb
 
         # Find which node to append to
@@ -72,12 +97,54 @@ class DynamicAABB(ABCBroadPhase):
                 old_parent.right = new_parent
 
             # Traverse up the tree and fix other aabb's
-            parent = old_parent
-            while parent is not None:
-                new_aabb = parent.aabb.union(shape_aabb)
-                if parent.aabb == new_aabb:
+            current = old_parent
+            while current is not None:
+                new_aabb = current.aabb.union(shape_aabb)
+                if current.aabb == new_aabb:
                     break
-                parent.aabb = new_aabb
+                current.aabb = new_aabb
+                current = current.parent
+        return leaf_node.node_id
+
+    def remove(self, node_id):
+        node = self._leaves.pop(node_id, None)
+        if node is None:
+            raise KeyError(node_id)
+        parent = node.parent
+        # Check if it's last (root) node
+        if parent is None:
+            self._root = None
+            return
+
+        # Remove parent node, as not needed anymore
+        grand_parent = parent.parent
+        if node is parent.left:
+            sibling = parent.right
+        else:
+            sibling = parent.left
+        # If parent's parent is root - just place sibling there
+        if grand_parent is None:
+            self._root = sibling
+            sibling.parent = None
+            return
+        # Link grand_parent and sibling
+        if grand_parent.left is parent:
+            grand_parent.left = sibling
+        else:
+            grand_parent.right = sibling
+        sibling.parent = grand_parent
+
+        # Adjust all nodes up the tree
+        current = grand_parent
+        while current is not None:
+            new_aabb = current.left.aabb.union(current.right.aabb)
+            if current.aabb == new_aabb:
+                break
+            current.aabb = new_aabb
+            current = current.parent
+
+        # Unlink node for easier GC
+        node.parent = None
 
     def _insert_strategy(self, node, aabb):
         """ For each node we can do one of the 3 cases for insertion:
@@ -86,10 +153,6 @@ class DynamicAABB(ABCBroadPhase):
                 * add it to current node
             Returns node to proceed recurcively on or None to indicate
             insertion to this node
-
-            Ref: Formulas are descibed in detail in "Real Time Collision
-            Detection" book, but implementation took from here:
-            https://github.com/azrafe7/hxAABBTree
         """
         left = node.left
         right = node.right
@@ -111,7 +174,7 @@ class DynamicAABB(ABCBroadPhase):
         if not right.leaf:
             cost_right -= right.aabb.area()
 
-        if cost_left < cost_parent and cost_right < cost_parent:
+        if cost_left >= cost_parent and cost_right >= cost_parent:
             return None
         elif cost_left < cost_right:
             return left
@@ -125,7 +188,6 @@ class DynamicAABB(ABCBroadPhase):
         shape_aabb = shape.bbox()
         results = []
         for obj in self._query_aabb(self._root, shape_aabb):
-            print(obj)
             if obj.shape.intersects(shape):
                 results.append(obj)
         return results
@@ -146,3 +208,12 @@ class DynamicAABB(ABCBroadPhase):
         if not node.leaf:
             self._print_tree(node.left, indent=indent + 2)
             self._print_tree(node.right, indent=indent + 2)
+
+    def get_height(self, node=None):
+        if node is None:
+            node = self._root
+        if node.leaf:
+            return 1
+        else:
+            h = max(self.get_height(node.left), self.get_height(node.right))
+            return h + 1

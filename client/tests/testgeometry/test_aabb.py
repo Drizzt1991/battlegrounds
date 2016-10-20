@@ -1,6 +1,6 @@
 import unittest
 
-from engine.geometry import AABB, Circle, Triangle, Vector
+from engine.geometry import AABB, Circle, Polygon, Triangle, Vector
 
 
 class TestAABB(unittest.TestCase):
@@ -60,6 +60,22 @@ class TestAABB(unittest.TestCase):
         self.assertTrue(rect.intersects(t))
         # Overlap
         t = Triangle([Vector(3, 0), Vector(3, 3), Vector(0, 3)])
+        self.assertTrue(rect.intersects(t))
+
+    def test_intersects_polygon(self):
+        rect = AABB(Vector(-2, -2), Vector(2, 2))
+        # Outside, separated by AC's normal
+        t = Polygon([Vector(2, 3), Vector(3, 2), Vector(4, 3), Vector(3, 4)])
+        self.assertFalse(rect.intersects(t))
+        # Outside, separated by X axis
+        t = Polygon([Vector(-1, 3), Vector(0, 2.1), Vector(1, 3),
+                     Vector(0, 3.9)])
+        self.assertFalse(rect.intersects(t))
+        # On border
+        t = Polygon([Vector(1, 3), Vector(3, 1), Vector(5, 3), Vector(3, 5)])
+        self.assertTrue(rect.intersects(t))
+        # Overlap
+        t = Polygon([Vector(3, 0), Vector(3, 2), Vector(2, 3), Vector(0, 3)])
         self.assertTrue(rect.intersects(t))
 
     def test_bbox(self):

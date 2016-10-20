@@ -8,10 +8,10 @@ setup:
 	pip install -Ue .
 
 test: flake
-	nosetests -s $(FLAGS) ./tests/
+	py.test -s --tb=native $(FLAGS) tests
 
 vtest: flake
-	nosetests -s -v $(FLAGS) ./tests/
+	py.test -s -v --tb=native $(FLAGS) tests
 
 cov cover coverage: flake
 	coverage erase

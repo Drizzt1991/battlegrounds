@@ -28,6 +28,18 @@ class Manifold:
         normal = normal
 
 
+def _sat_test(points1, points2, normal):
+    sp = []  # projections of self's vertexes onto line n
+    for v in points1:
+        sp.append(normal.dot(v))
+    op = []  # projections of other's vertexes onto line n
+    for v in points2:
+        op.append(normal.dot(v))
+    if max(op) < min(sp) or min(op) > max(sp):
+        return False
+    return True
+
+
 def intersect_aabb_aabb(a: AABB, b: AABB) -> Manifold:
     if b.min.x > a.max.x or b.min.y > a.max.y:
         return None
@@ -52,7 +64,7 @@ def intersect_aabb_triangle(aabb: AABB, triangle: Triangle) -> Manifold:
     # Test X axis separation
     t_min = min(a.x, b.x, c.x)
     t_max = max(a.x, b.x, c.x)
-    if t_max < aabb_min.x or t_min > aabb_max.y:
+    if t_max < aabb_min.x or t_min > aabb_max.x:
         return None
     # Test Y axis separation
     t_min = min(a.y, b.y, c.y)
@@ -93,7 +105,34 @@ def intersect_aabb_triangle(aabb: AABB, triangle: Triangle) -> Manifold:
 
 
 def intersect_aabb_polygon(aabb: AABB, polygon: Polygon) -> Manifold:
-    raise NotImplementedError()
+    """ Will use the Separating Axes Test for this. The axes can be one of:
+        * 2 normals for aabb edges
+        * n normals for polygon edges
+    """
+    aabb_min, aabb_max = aabb._min, aabb._max
+    points = polygon.points
+    # Test X axis separation
+    p_x = [p.x for p in points]
+    if max(p_x) < aabb_min.x or min(p_x) > aabb_max.x:
+        return None
+    # Test Y axis separation
+    p_y = [p.y for p in points]
+    if max(p_y) < aabb_min.y or min(p_y) > aabb_max.y:
+        return None
+
+    # Next test all polygon's normals
+    aabb_a, aabb_b = Vector(aabb_min.x, aabb_max.y), \
+        Vector(aabb_max.x, aabb_min.y)
+    aabb_points = [aabb_min, aabb_a, aabb_max, aabb_b]
+
+    prev_point = points[-1]
+    for point in points:
+        normal = (point - prev_point).rotate_deg(90)
+        if not _sat_test(points, aabb_points, normal):
+            return None
+        prev_point = point
+
+    return Manifold()
 
 
 def intersect_circle_circle(a: Circle, b: Circle) -> Manifold:
@@ -124,19 +163,7 @@ def intersect_triangle_triangle(a: Triangle, b: Triangle) -> Manifold:
 
 def intersect_triangle_polygon(triangle: Triangle, polygon: Polygon) \
         -> Manifold:
-    raise NotImplementedError()
-
-
-def _sat_test(poly1, poly2, normal):
-    sp = []  # projections of self's vertexes onto line n
-    for v in poly1.points:
-        sp.append(normal.dot(v))
-    op = []  # projections of other's vertexes onto line n
-    for v in poly2.points:
-        op.append(normal.dot(v))
-    if max(op) < min(sp) or min(op) > max(sp):
-        return False
-    return True
+    return intersect_polygon_polygon(triangle, polygon)
 
 
 def intersect_polygon_polygon(a: Polygon, b: Polygon) -> Manifold:
@@ -145,7 +172,7 @@ def intersect_polygon_polygon(a: Polygon, b: Polygon) -> Manifold:
     prev_point = points[-1]
     for point in points:
         normal = (point - prev_point).rotate_deg(90)
-        if not _sat_test(a, b, normal):
+        if not _sat_test(points, b.points, normal):
             return None
         prev_point = point
 
@@ -154,7 +181,7 @@ def intersect_polygon_polygon(a: Polygon, b: Polygon) -> Manifold:
     prev_point = points[-1]
     for point in points:
         normal = (point - prev_point).rotate_deg(90)
-        if not _sat_test(a, b, normal):
+        if not _sat_test(a.points, points, normal):
             return None
         prev_point = point
 

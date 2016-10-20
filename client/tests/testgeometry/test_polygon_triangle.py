@@ -1,6 +1,6 @@
 import unittest
 
-from engine.geometry import AABB, Triangle, Vector
+from engine.geometry import AABB, Polygon, Triangle, Vector
 
 
 class TestTriangle(unittest.TestCase):
@@ -32,3 +32,13 @@ class TestTriangle(unittest.TestCase):
     def test_triangle_bbox(self):
         t = Triangle([Vector(2, 2), Vector(4, 2), Vector(4, 4)])
         self.assertEqual(t.bbox(), AABB(Vector(2, 2), Vector(4, 4)))
+
+    def test_triangle_intersect_polygon(self):
+        t = Triangle([Vector(0, 3), Vector(3, 0), Vector(4, 4)])
+        # Separated by triangle's AC
+        p = Polygon([Vector(0, 0), Vector(-1, 2), Vector(1, 1), Vector(2, -1)])
+        self.assertFalse(t.intersects(p))
+        # Overlaping
+        p = Polygon([Vector(0, 0), Vector(1, 3), Vector(3, 1), Vector(1, 1)])
+        self.assertTrue(t.intersects(p))
+        return

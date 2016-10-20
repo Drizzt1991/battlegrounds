@@ -14,15 +14,22 @@ class ABCBroadPhase(object):
     '''
 
     @abstractmethod
-    def add(self, object):
-        """ Add object to broad phase queries. object.shape should be
-            object's shape.
+    def get_height(self):
+        """ Returns tree height. Useful for debugging issues
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def remove(self, object):
-        """ Remove previously added object. If object is not added
+    def add(self, object):
+        """ Add object to broad phase queries. object.shape should be
+            object's shape.
+            Returns: node_id of the created node
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def remove(self, node_id):
+        """ Remove previously added object. If node_id not present
             raises KeyError()
         """
         raise NotImplementedError()
