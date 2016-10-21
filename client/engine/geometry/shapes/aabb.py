@@ -173,6 +173,8 @@ class AABB(BaseShape):
             p_y = self._max.y
         return Vector(p_x, p_y)
 
+    closest_point = _closest_point
+
     def union(self, other):
         """ Combine 2 AABB's to produce one, that contains both
         """

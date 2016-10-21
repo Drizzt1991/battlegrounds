@@ -2,6 +2,7 @@ import math
 import sys
 import unittest
 
+from engine.geometry import Vector
 from engine.geometry.shapes.shape import BaseShape
 
 # We just don't want to import pyglet if it's not needed. It will do dumb stuff
@@ -17,7 +18,7 @@ def create_drawer():
     from pyglet import gl
     import pyglet
 
-    def draw_circle(x, y, radius, iterations=None):
+    def draw_circle(x, y, radius, iterations=None, color=None):
         """ Draw circle in OpenGL context
         """
         if iterations is None:
@@ -28,11 +29,17 @@ def create_drawer():
         dx, dy = radius, 0
 
         points = [x, y]
+        if color:
+            col = list(color)
         for i in range(iterations + 1):
             points.extend((x + dx, y + dy))
             dx, dy = (dx * c - dy * s), (dy * c + dx * s)
+            if color:
+                col.extend(color)
 
         bg = gl.GL_TRIANGLE_FAN, ('v2f', tuple(points))
+        if color:
+            bg = bg + (('c3f', col), )
         fg = gl.GL_LINE_LOOP, ('v2f', tuple(points[2:]))
         return bg, fg
 
@@ -50,15 +57,21 @@ def create_drawer():
                     bg, fg = self.draw_dynamicaabb(shape)
                     foreground.extend(fg)
                     background.extend(bg)
+                elif isinstance(shape, Vector):
+                    bg, fg = self.draw_vector(shape)
+                    foreground.append(fg)
+                    background.append(bg)
 
             gl.glColor3f(0.0, 0.7, 0.7)
-            for draw_type, draw_points in background:
+            for x in background:
+                draw_type, *draw_points = x
                 pyglet.graphics.draw(
-                    len(draw_points[1]) // 2, draw_type, draw_points)
+                    len(draw_points[0][1]) // 2, draw_type, *draw_points)
             gl.glColor3f(0.8, 0.8, 0.8)
-            for draw_type, draw_points in foreground:
+            for x in foreground:
+                draw_type, *draw_points = x
                 pyglet.graphics.draw(
-                    len(draw_points[1]) // 2, draw_type, draw_points)
+                    len(draw_points[0][1]) // 2, draw_type, *draw_points)
 
         def draw_shape(self, shape):
             draw_func = "draw_shape_" + shape.__class__.__name__.lower()
@@ -111,6 +124,11 @@ def create_drawer():
                 gl.GL_LINE_LOOP,
                 ('v2f', p)
             )
+            return bg, fg
+
+        def draw_vector(self, vector):
+            bg, fg = draw_circle(vector.x, vector.y, 0.15, 8,
+                                 color=(1.0, 0.0, 0.0))
             return bg, fg
 
         def draw_dynamicaabb(self, dynamic_aabb):
@@ -187,8 +205,8 @@ def debug_draw(*p, width=20):
         dy = (data['dy'] / w_width) * width
         pyglet.gl.glTranslatef(width // 2 + dx, height // 2 + dy, 0)
         pyglet.gl.glScalef(data['scale'], data['scale'], 0)
-        drawer.draw(p)
         drawer.draw_scale()
+        drawer.draw(p)
 
     @w.event
     def on_text(text):

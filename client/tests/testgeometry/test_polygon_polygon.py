@@ -1,9 +1,9 @@
-import unittest
-
 from engine.geometry import Polygon, Vector
 
+from .._testutil import ShapeTestCase
 
-class TestPolygon(unittest.TestCase):
+
+class TestPolygon(ShapeTestCase):
 
     def test_contains(self):
         v0 = Vector(2, 1)
@@ -115,3 +115,54 @@ class TestPolygon(unittest.TestCase):
         self.assertEqual(v.distance(o16), 0)
         self.assertEqual(v.distance(o17), -1)
         self.assertEqual(v.distance(o18), 0)
+
+    def test_closest_point(self):
+        points = [[0, 5], [-1, 4], [-2, 1], [-2, 0], [-1, -3], [0, -5]]
+        poly = Polygon([Vector(*p) for p in points])
+
+        # Test point inside polygon
+        p = Vector(-1, 0)
+
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, p)
+        # Test point on border
+        p = Vector(0, 0)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, p)
+        # Test point in edge AABB region
+        p = Vector(1, 0)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(0, 0))
+        p = Vector(1, -2.5)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(0.0, -2.5))
+
+        # Test point in vertex AABB region
+        p = Vector(1, 6)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(0, 5))
+        # Test point in edge AABB region with may polygon vertices
+        p = Vector(-1, 6)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(0, 5))
+        p = Vector(-1.7, 5.3)
+        closest = poly.closest_point(p,)
+        self.assertEqual(closest, Vector(-0.7, 4.3))
+        p = Vector(-3, 3)
+        closest = poly.closest_point(p,)
+        self.assertEqual(closest, Vector(-1.5, 2.5))
+        # Test point in vertex AABB region with may polygon vertices
+        p = Vector(-3, 6)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(-1.0, 4.0))
+        p = Vector(-3, -6)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(-0.2, -4.6))
+
+        # Test point in AABB outside Polygon
+        p = Vector(-1.5, -4.5)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(-0.5, -4.0))
+        p = Vector(-1.7, -2)
+        closest = poly.closest_point(p)
+        self.assertEqual(closest, Vector(-1.37, -1.89))

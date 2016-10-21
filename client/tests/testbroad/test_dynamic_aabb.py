@@ -21,9 +21,9 @@ class TestDynamicAABB(ShapeTestCase):
         'triangle': Triangle([Vector(0, 0), Vector(1, 0), Vector(1, 1)]),
         'circle': Circle(Vector(0, 0), radius=2),
         'aabb': AABB(Vector(-2, -2), Vector(-1, -1)),
-        'poly': Polygon([
+        'poly': Polygon(list(reversed([
             Vector(3, 3), Vector(3.5, 3.5),
-            Vector(4.5, 3.5), Vector(4, 3)]),
+            Vector(4.5, 3.5), Vector(4, 3)]))),
     }
 
     def _create_tree(self):
@@ -99,5 +99,4 @@ class TestDynamicAABB(ShapeTestCase):
         for i in range(128):
             nodes.append(tree.add(StabObj(shape)))
 
-        tree._print_tree()
         self.assertEqual(tree.get_height(), 5)

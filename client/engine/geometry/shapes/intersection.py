@@ -40,7 +40,9 @@
     `Polygon` manifolds are a bit more tricky to work with
 
 """
-from engine.geometry.vector import Vector
+import math
+
+from engine.geometry.vector import EPSILON, Vector
 
 from .aabb import AABB
 from .circle import Circle
@@ -88,10 +90,14 @@ def intersect_aabb_aabb(a: AABB, b: AABB) -> Manifold:
 def intersect_aabb_circle(aabb: AABB, circle: Circle) -> Manifold:
     c = circle.center
     r = circle.radius
-    closest = aabb._closest_point(c)
+    closest = aabb.closest_point(c)
     d = closest.distance(c)
     if d > r:
         return None
+    if math.fabs(d) < EPSILON:
+        # Place some constant values just to not break, but this manifold's
+        # not so useful =(
+        return CircleManifold(depth=r, normal=Vector(1, 0))
     return CircleManifold(depth=r - d, normal=(closest - c).unit())
 
 
@@ -181,24 +187,39 @@ def intersect_circle_circle(a: Circle, b: Circle) -> Manifold:
     r = a._r + b._r
     if d > r:
         return None
+    if math.fabs(d) < EPSILON:
+        # Place some constant values just to not break, but this manifold's
+        # not so useful =(
+        return CircleManifold(depth=r, normal=Vector(1, 0))
     return CircleManifold(depth=r - d, normal=(a._c - b._c).unit())
 
 
 def intersect_circle_triangle(circle: Circle, triangle: Triangle) -> Manifold:
-    closest = triangle._closest_point(circle.center)
     c = circle.center
     r = circle.radius
+    closest = triangle.closest_point(c)
     d = closest.distance(c)
     if d > r:
         return None
+    if math.fabs(d) < EPSILON:
+        # Place some constant values just to not break, but this manifold's
+        # not so useful =(
+        return CircleManifold(depth=r, normal=Vector(1, 0))
     return CircleManifold(depth=r - d, normal=(c - closest).unit())
 
 
 def intersect_circle_polygon(circle: Circle, polygon: Polygon) -> Manifold:
-    d = polygon.distance(circle.center)
-    if (d - circle.radius > 0):
+    c = circle.center
+    r = circle.radius
+    closest = polygon.closest_point(c)
+    d = closest.distance(c)
+    if d > r:
         return None
-    return Manifold()
+    if math.fabs(d) < EPSILON:
+        # Place some constant values just to not break, but this manifold's
+        # not so useful =(
+        return CircleManifold(depth=r, normal=Vector(1, 0))
+    return CircleManifold(depth=r - d, normal=(c - closest).unit())
 
 
 def intersect_triangle_triangle(a: Triangle, b: Triangle) -> Manifold:

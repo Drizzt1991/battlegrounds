@@ -1,7 +1,11 @@
+import math
+
+from engine.utils import lazy_property
+
 from .aabb import AABB
 from .circle import Circle
 from .shape import BaseIntersection, BaseShape
-from ..utils import orient, seg_distance
+from ..utils import orient, seg_closest, seg_distance
 from ..vector import Vector
 
 
@@ -9,7 +13,7 @@ def _check_convex(points):
     prev_edge = [points[-2], points[-1]]
     for point in points:
         o = orient(prev_edge[0], prev_edge[1], point)
-        if o > 0:
+        if o < 0:
             return False
         elif o == 0:
             raise ValueError("3 Points on single line {}".format(
@@ -149,6 +153,8 @@ class Triangle(BaseShape):
         # P inside of the triangle
         return p
 
+    closest_point = _closest_point
+
     def distance(self, other):
         assert isinstance(other, Vector)
         x = self._closest_point(other)
@@ -176,7 +182,7 @@ class Polygon(BaseShape):
     """ We assume that the polygon is convex and ordered counter-clockwise """
 
     def __init__(self, points):
-        assert len(points) >= 3
+        assert orient(*points[:3]) > 0
         self._points = tuple(points)
 
     def __eq__(self, other):
@@ -191,19 +197,48 @@ class Polygon(BaseShape):
         return "Polygon({})".format(list(self.points))
 
     def bbox(self):
-        axis = [p.x for p in self._points]
-        min_x = min(axis)
-        max_x = max(axis)
-        axis = [p.y for p in self._points]
-        min_y = min(axis)
-        max_y = max(axis)
-        return AABB(Vector(min_x, min_y), Vector(max_x, max_y))
+        p = self._points
+        min_x, min_y, max_x, max_y = self._min_max
+        return AABB(
+            Vector(p[min_x].x, p[min_y].y), Vector(p[max_x].x, p[max_y].y))
+
+    @lazy_property
+    def center(self):
+        """ Center of a tight AABB around this polygon
+        """
+        return self.bbox().center
+
+    @lazy_property
+    def _min_max(self):
+        """ 4 indices, of min_x, min_y, max_x, max_y points. They can be equal
+        """
+        points = self._points
+        le = len(points)
+        min_x = 0
+        min_y = 0
+        max_x = 0
+        max_y = 0
+        for i in range(1, le):
+            if points[min_x].x > points[i].x:
+                min_x = i
+            if points[max_x].x < points[i].x:
+                max_x = i
+            if points[min_y].y > points[i].y:
+                min_y = i
+            if points[max_y].y < points[i].y:
+                max_y = i
+        return min_x, min_y, max_x, max_y
 
     @property
     def points(self):
         return self._points
 
     def _contains(self, other):
+        """ Subroutine for containment checks. Returns:
+            * -1 if point outside of polygon
+            * 0 if point inside, but not on border
+            * 1 of points of the edge, that contain t
+        """
         assert isinstance(other, Vector)
         points = self._points
         pivot = points[0]
@@ -259,23 +294,108 @@ class Polygon(BaseShape):
             return intersect_aabb_polygon(other, self)
         raise ValueError(other)
 
-    def distance(self, other):
-        assert isinstance(other, Vector)
+    def _closest_point(self, other):
+        # import pdb
+        # pdb.set_trace()
         points = self._points
         le = len(points)
-        min_x = 0
-        min_y = 0
-        max_x = 0
-        max_y = 0
-        for i in range(1, le):
-            if points[min_x].x > points[i].x:
-                min_x = i
-            if points[max_x].x < points[i].x:
-                max_x = i
-            if points[min_y].y > points[i].y:
-                min_y = i
-            if points[max_y].y < points[i].y:
-                max_y = i
+        # Choose pivot by bounding AABB sections first
+        pivot = self._choose_pivot(other)
+        # If None - point is inside of bounding AABB, so we need to check for
+        # containment in polygon
+        if pivot is None:
+            # Point may be within the polygon
+            check = self._contains(other)
+            if check > 0:
+                # Point lies on polygon
+                return other, -1
+            elif check == 0:
+                # Point lies on border
+                return other, 0
+            # No way to optimize
+            pivot = 0
+
+        # Decide on climbing direction and find edge facing the point
+        p1 = points[(pivot + 1) % le]
+        up_face = orient(points[pivot], p1, other)
+        down_face = orient(points[pivot - 1], points[pivot], other)
+        dist = None
+
+        if up_face > 0 and down_face > 0:
+            # We have not idea what direction is best, as it on other side of
+            # polygon. Just go down, and we can skip 1st point already
+            pivot = pivot - 1
+            direction = -1
+            # Iterate until edge is facing the point, we will climb from there
+            while True:
+                p = (pivot - 1) % le
+                o = orient(points[p], points[pivot], other)
+                pivot = p
+                if o < 0:
+                    break
+        elif up_face < 0:
+            if down_face > 0:
+                # We will go up if down edge is not facing the point
+                direction = 1
+            else:
+                dist = points[pivot].distance2(other)
+                up_dist = p1.distance2(other)
+                # We will go up if distance is lower (extremum is that way)
+                if up_dist < dist:
+                    pivot = (pivot + 1) % le
+                    dist = up_dist
+                    direction = 1
+                else:
+                    direction = -1
+        else:
+            direction = -1
+
+        if dist is None:
+            dist = points[pivot].distance2(other)
+
+        # Climb the hill in direction
+        while True:
+            p = (pivot + direction) % le
+            if orient(points[pivot], points[p], other) > 0:
+                # We passed last point facing our direction. Pivot is the
+                # extremum
+                break
+            cur_dist = points[p].distance2(other)
+            if cur_dist < dist:
+                pivot = p
+                dist = cur_dist
+            else:
+                break
+
+        p0 = points[pivot]
+        p1 = seg_closest(p0, points[pivot - 1], other)
+        p2 = seg_closest(p0, points[(pivot + 1) % le], other)
+        p1_dist = p1.distance2(other)
+        p2_dist = p2.distance2(other)
+        if dist < p1_dist and dist < p2_dist:
+            return p0, math.sqrt(dist)
+        elif p1_dist < p2_dist:
+            return p1, math.sqrt(p1_dist)
+        else:
+            return p2, math.sqrt(p2_dist)
+
+    def closest_point(self, other):
+        assert isinstance(other, Vector)
+        point, dist = self._closest_point(other)
+        return point
+
+    def distance(self, other):
+        assert isinstance(other, Vector)
+        point, dist = self._closest_point(other)
+        return dist
+
+    def _choose_pivot(self, other):
+        """ Fast function to choose some point to start the climbing algorithm
+        in distance and closest point routines
+        """
+        points = self._points
+        le = len(points)
+        min_x, min_y, max_x, max_y = self._min_max
         # Determining which Voronoi region of the AABB encasing the polygon
         # the point of interest is located in to better choose the pivot point.
         if other.x < points[min_x].x:
@@ -319,37 +439,10 @@ class Polygon(BaseShape):
                 # straight above
                 pivot = max_y
             else:
-                # Point may be within the polygon
-                check = self._contains(other)
-                if check > 0:
-                    return -1
-                    # Point inside polygon
-                elif check == 0:
-                    return 0
-                    # Point lies on the edge
-                else:
-                    pivot = 0
-                    # Point is near polygon, optimizing the pivot point
-                    # selection becomes expensive
-        dist = points[pivot].distance2(other)
-        while True:
-            cur_dist = points[pivot - 1].distance2(other)
-            if cur_dist < dist:
-                pivot -= 1
-                dist = cur_dist
-            else:
-                break
-        while True:
-            if pivot == le - 1:
-                pivot = pivot - le
-            cur_dist = points[pivot + 1].distance2(other)
-            if cur_dist < dist:
-                pivot += 1
-                dist = cur_dist
-            else:
-                break
-        return min(dist, seg_distance(points[pivot], points[pivot - 1], other),
-                   seg_distance(points[pivot], points[pivot + 1], other))
+                # Point is near polygon, optimizing the pivot point
+                # selection becomes expensive
+                return None
+        return pivot
 
 
 from .intersection import (  # noqa
