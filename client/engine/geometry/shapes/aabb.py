@@ -195,6 +195,9 @@ class AABB(BaseShape):
         dv = Vector(dx, dy)
         return AABB(self._min - dv, self._max + dv)
 
+    def translate(self, position):
+        return AABB(self._min + position, self._max + position)
+
 # Circular import
 from .circle import Circle  # noqa
 from .polygon import Polygon, Triangle  # noqa

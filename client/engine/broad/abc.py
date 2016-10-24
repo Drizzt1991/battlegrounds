@@ -20,7 +20,7 @@ class ABCBroadPhase(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def add(self, object):
+    def add(self, obj, *args):
         """ Add object to broad phase queries. object.shape should be
             object's shape.
             Returns: node_id of the created node
@@ -35,7 +35,7 @@ class ABCBroadPhase(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def query_shape(self, shape):
+    def query(self, shape):
         """ Return objects, that intersect this shape.
         """
         raise NotImplementedError()

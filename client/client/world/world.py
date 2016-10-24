@@ -1,4 +1,5 @@
 from engine.geometry import Vector
+from engine.broad import DynamicAABB
 
 from .abc import ABCWorld
 from .actors import Character
@@ -8,7 +9,10 @@ from .loader import load_props
 class World(ABCWorld):
 
     def __init__(self, world_map):
-        self._props = load_props(self, world_map)
+        self._props = DynamicAABB()
+        for prop in load_props(self, world_map):
+            aabb = prop.shape.bbox().translate(prop.position)
+            self._props.add(prop, aabb)
         self._actors = [
             Character(self, position=Vector(0, 0))]
         self._tick_period = 0.03125  # ~30 fps simulation
@@ -26,7 +30,9 @@ class World(ABCWorld):
 
     def query_props_intersection(self, position, shape):
         intersections = []
-        for prop in self._props:
+        # Translate shape to world coordinates
+        tshape = shape.translate(position)
+        for prop in self._props.query_shape(tshape.bbox()):
             # Translate query shape to prop coordinates
             tshape = shape.translate(position - prop.position)
             intersection = tshape.intersects(prop.shape)

@@ -15,6 +15,17 @@
 
             https://github.com/erincatto/Box2D/blob/master/Box2D/Box2D/Collision/b2DynamicTree.cpp
 
+
+// Separating axis for segment (Gino, p80).
+        // |dot(v, p1 - c)| > dot(|v|, h)
+        b2Vec2 c = node->aabb.GetCenter();
+        b2Vec2 h = node->aabb.GetExtents();
+        float32 separation = b2Abs(b2Dot(v, p1 - c)) - b2Dot(abs_v, h);
+        if (separation > 0.0f)
+        {
+            continue;
+        }
+
 """
 
 
@@ -58,12 +69,9 @@ class DynamicAABB(ABCBroadPhase):
         self._leaves = {}  # Leaves only
         self._next_id = 0  # Next leaf ID
 
-    def add(self, obj):
-        if not hasattr(obj, "shape") or not isinstance(obj.shape, BaseShape):
-            raise ValueError(obj)
-
+    def add(self, obj, shape_aabb):
         leaf_node = LeafNode(
-            node_id=self._next_id, obj=obj, aabb=obj.shape.bbox())
+            node_id=self._next_id, obj=obj, aabb=shape_aabb)
         self._next_id += 1
         self._leaves[leaf_node.node_id] = leaf_node
         node = self._root
@@ -71,7 +79,6 @@ class DynamicAABB(ABCBroadPhase):
         if node is None:
             self._root = leaf_node
             return leaf_node.node_id
-        shape_aabb = leaf_node.aabb
 
         # Find which node to append to
         while not node.leaf:
@@ -188,8 +195,7 @@ class DynamicAABB(ABCBroadPhase):
         shape_aabb = shape.bbox()
         results = []
         for obj in self._query_aabb(self._root, shape_aabb):
-            if obj.shape.intersects(shape):
-                results.append(obj)
+            results.append(obj)
         return results
 
     def _query_aabb(self, node, aabb):

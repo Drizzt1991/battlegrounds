@@ -8,8 +8,9 @@ from .._testutil import ShapeTestCase
 
 class StabObj:
 
-    def __init__(self, shape):
+    def __init__(self, shape, position=Vector(0, 0)):
         self.shape = shape
+        self.position = position
 
     def __str__(self):
         return "StabObj({!r})".format(self.shape)
@@ -29,7 +30,7 @@ class TestDynamicAABB(ShapeTestCase):
     def _create_tree(self):
         tree = DynamicAABB()
         for shape in self._shapes.values():
-            tree.add(StabObj(shape))
+            tree.add(StabObj(shape), shape.bbox())
         return tree
 
     def _get_shapes(self, objects):
@@ -71,10 +72,10 @@ class TestDynamicAABB(ShapeTestCase):
         tree = DynamicAABB()
         c1 = Circle(Vector(0, 0), 20)
         c2 = Circle(Vector(20, 18), 1)
-        tree.add(StabObj(c2))
-        tree.add(StabObj(c1))
+        tree.add(StabObj(c2), c2.bbox())
+        tree.add(StabObj(c1), c1.bbox())
         c3 = Circle(Vector(18, -19), 1)
-        tree.add(StabObj(c3))
+        tree.add(StabObj(c3), c3.bbox())
 
         self.assertEqual(self._dump_tree(tree), [
             [[c2], [c3]],
@@ -84,7 +85,7 @@ class TestDynamicAABB(ShapeTestCase):
     def test_remove_one(self):
         tree = DynamicAABB()
         c1 = StabObj(Circle(Vector(0, 0), 1))
-        node_id = tree.add(c1)
+        node_id = tree.add(c1, c1.shape.bbox())
         self.assertTrue(tree._root)
         tree.remove(node_id)
         self.assertFalse(tree._root)
@@ -97,6 +98,6 @@ class TestDynamicAABB(ShapeTestCase):
         shape = AABB(Vector(0, 0), Vector(1, 1))
         nodes = []
         for i in range(128):
-            nodes.append(tree.add(StabObj(shape)))
+            nodes.append(tree.add(StabObj(shape), shape.bbox()))
 
         self.assertEqual(tree.get_height(), 5)

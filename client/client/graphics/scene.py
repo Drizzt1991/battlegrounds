@@ -4,6 +4,8 @@ from pyglet.gl import (
 )
 from pyglet.graphics import draw
 
+from engine.geometry import Circle
+
 ROTATOR_LENGTH = 20
 
 
@@ -13,7 +15,8 @@ class Scene(object):
         self._world = world
 
     def draw(self):
-        for prop in self._world.props:
+        aabb = Circle(self._world.main_actor.position, 150).bbox()
+        for prop in self._world.props.query_shape(aabb):
             self.draw_shape(prop.shape, prop.position)
         for actor in self._world.actors:
             self.draw_shape(actor.shape, actor.position)
