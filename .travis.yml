@@ -19,4 +19,4 @@ script:
   - make cov
 
 after_success:
-  - coveralls
+  - pushd client && coveralls && popd
