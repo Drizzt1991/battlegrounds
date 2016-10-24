@@ -48,6 +48,7 @@ class TestDynamicAABB(ShapeTestCase):
             result.append(self._dump_tree(node.right))
         return result
 
+    @pytest.mark.xfail
     def test_query_shape(self):
         tree = self._create_tree()
         # Check zero results
