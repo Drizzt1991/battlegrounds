@@ -1,4 +1,4 @@
-def det(matrix, mul):
+def _det(matrix, mul):
     width = len(matrix)
     if width == 1:
         return mul * matrix[0][0]
@@ -14,7 +14,7 @@ def det(matrix, mul):
                         buff.append(matrix[j][k])
                 m.append(buff)
             sign *= -1
-            total += mul * det(m, sign * matrix[0][i])
+            total += mul * _det(m, sign * matrix[0][i])
         return total
 
 
@@ -40,12 +40,12 @@ def incircle(a, b, c, d):
         raise ValueError("Points a, b, and c are colinear and cannot form\
             a circle.")
     elif (ort > 0):
-        return det([[a.x, a.y, a.x * a.x + a.y * a.y, 1],
+        return _det([[a.x, a.y, a.x * a.x + a.y * a.y, 1],
                     [b.x, b.y, b.x * b.x + b.y * b.y, 1],
                     [c.x, c.y, c.x * c.x + c.y * c.y, 1],
                     [d.x, d.y, d.x * d.x + d.y * d.y, 1]], 1)
     else:
-        return ((-1) * det([[a.x, a.y, a.x * a.x + a.y * a.y, 1],
+        return ((-1) * _det([[a.x, a.y, a.x * a.x + a.y * a.y, 1],
                             [b.x, b.y, b.x * b.x + b.y * b.y, 1],
                             [c.x, c.y, c.x * c.x + c.y * c.y, 1],
                             [d.x, d.y, d.x * d.x + d.y * d.y, 1]], 1))
@@ -53,12 +53,16 @@ def incircle(a, b, c, d):
 
 def seg_distance(a, b, c):
     "Calculates the distance between segment AB and point C."
+    return c.distance(seg_closest(a, b, c))
 
+
+def seg_closest(a, b, c):
+    "Calculates the closest point on segment AB to point C."
     ab = b - a
     ac = c - a
     len2_ab = ab.length2()
     if len2_ab == 0:
-        return c.distance(a)
+        return a
     t = max(0, min(1, ab.dot(ac) / len2_ab))
     c_proj = a + t * ab
-    return c.distance(c_proj)
+    return c_proj

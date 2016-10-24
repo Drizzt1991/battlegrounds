@@ -92,6 +92,9 @@ class Vector(object):
             return self._x == other._x and self._y == other._y
         return NotImplemented
 
+    def __hash__(self):
+        return hash((self._x, self._y))
+
     def length2(self):
         """ Squared length is cheaper to compute """
         return self._x ** 2 + self._y ** 2

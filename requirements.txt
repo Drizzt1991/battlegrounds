@@ -1,5 +1,7 @@
 pyyaml
 coverage
-nose
+pytest==3.0.3
+pytest-cov==2.4.0
+ipdb
 pyglet
 flake8

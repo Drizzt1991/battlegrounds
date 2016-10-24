@@ -1,9 +1,7 @@
 import unittest
 
 from engine.geometry import Vector
-from engine.geometry.utils import incircle
-from engine.geometry.utils import orient
-from engine.geometry.utils import seg_distance
+from engine.geometry.utils import incircle, orient, seg_distance
 
 
 class TestUtils(unittest.TestCase):
