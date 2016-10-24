@@ -1,8 +1,10 @@
 from pyglet.gl import (
     glPushMatrix, glPopMatrix, glTranslatef, gluNewQuadric, gluSphere,
-    GL_LINES
+    GL_LINES, GL_LINE_LOOP, GL_TRIANGLE_FAN
 )
 from pyglet.graphics import draw
+
+from engine.geometry import Circle
 
 ROTATOR_LENGTH = 20
 
@@ -13,7 +15,8 @@ class Scene(object):
         self._world = world
 
     def draw(self):
-        for prop in self._world.props:
+        aabb = Circle(self._world.main_actor.position, 150).bbox()
+        for prop in self._world.props.query_shape(aabb):
             self.draw_shape(prop.shape, prop.position)
         for actor in self._world.actors:
             self.draw_shape(actor.shape, actor.position)
@@ -27,12 +30,49 @@ class Scene(object):
     def draw_shape_circle(self, circle, position):
         glPushMatrix()
         center = position + circle.center
-        # We have no need fot unit perfect circle, as we will still have a
+        # We have no need for unit perfect circle, as we will still have a
         # projection in the game.
         # draw_circle(center.x, center.y, circle.radius, iterations=32)
         glTranslatef(center.x, center.y, 0)
         sphere = gluNewQuadric()
-        gluSphere(sphere, circle.radius, 32, 32)
+        gluSphere(sphere, circle.radius, 32, 5)
+        glPopMatrix()
+
+    def draw_shape_aabb(self, aabb, position):
+        glPushMatrix()
+        glTranslatef(position.x, position.y, 0)
+        x_min, y_min, x_max, y_max = \
+            aabb.min.x, aabb.min.y, aabb.max.x, aabb.max.y
+        draw(
+            4, GL_LINE_LOOP,
+            ('v2f', (x_min, y_min, x_min, y_max, x_max, y_max, x_max, y_min))
+        )
+        glPopMatrix()
+
+    def draw_shape_triangle(self, triangle, position):
+        glPushMatrix()
+        glTranslatef(position.x, position.y, 0)
+        points = []
+        for point in triangle.points:
+            points.extend((point.x, point.y))
+        draw(
+            3, GL_LINE_LOOP,
+            ('v2f', points)
+        )
+        glPopMatrix()
+
+    def draw_shape_polygon(self, polygon, position):
+        glPushMatrix()
+        glTranslatef(position.x, position.y, 0)
+        points = polygon.points
+        p = []
+        for point in points:
+            p.extend((point.x, point.y))
+        draw(
+            len(points),
+            GL_TRIANGLE_FAN,
+            ('v2f', p)
+        )
         glPopMatrix()
 
     def draw_rotator(self, rotation, position):

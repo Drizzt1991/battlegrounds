@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from engine.geometry import Circle, Vector
+from engine.geometry import AABB, Circle, Vector
 
 
 class TestCircle(TestCase):
@@ -35,3 +35,7 @@ class TestCircle(TestCase):
         self.assertTrue(c.intersects(Circle(Vector(2, 3), 1)))
         # No intersection
         self.assertFalse(c.intersects(Circle(Vector(0, 0), 1)))
+
+    def test_circle_bbox(self):
+        c = Circle(Vector(5, 3), 2)
+        self.assertEqual(c.bbox(), AABB(Vector(3, 1), Vector(7, 5)))

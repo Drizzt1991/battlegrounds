@@ -1,8 +1,6 @@
 import unittest
 
-from engine.geometry import Circle
-from engine.geometry import Vector
-from engine.geometry.aabb import AABB
+from engine.geometry import AABB, Circle, Polygon, Triangle, Vector
 
 
 class TestAABB(unittest.TestCase):
@@ -37,12 +35,49 @@ class TestAABB(unittest.TestCase):
         self.assertEqual(rect.contains(Vector(-1, -1)), False)
         self.assertEqual(rect.contains(Vector(213132534, -9843574398)), False)
 
-    def test_intersects(self):
+    def test_intersects_circle(self):
         rect = AABB(Vector(2, 2), Vector(6, 4))
         zr = Vector(0, 0)
-
         self.assertEqual(rect.intersects(Circle(zr, 1)), None)
         self.assertEqual(rect.intersects(Circle(Vector(6, 6.0001), 2)), None)
 
+    def test_intersects_aabb(self):
+        rect = AABB(Vector(2, 2), Vector(6, 4))
+        zr = Vector(0, 0)
         self.assertEqual(rect.intersects(AABB(zr, Vector(1, 2))), None)
         self.assertTrue(rect.intersects(AABB(zr, Vector(3, 2))))
+
+    def test_intersects_triangle(self):
+        rect = AABB(Vector(-2, -2), Vector(2, 2))
+        # Outside, separated by AC's normal
+        t = Triangle([Vector(2, 3), Vector(3, 2), Vector(3, 3)])
+        self.assertFalse(rect.intersects(t))
+        # Outside, separated by X axis
+        t = Triangle([Vector(-1, 3), Vector(0, 2.1), Vector(1, 3)])
+        self.assertFalse(rect.intersects(t))
+        # On border
+        t = Triangle([Vector(2, 3), Vector(2, 2), Vector(3, 2)])
+        self.assertTrue(rect.intersects(t))
+        # Overlap
+        t = Triangle([Vector(3, 0), Vector(3, 3), Vector(0, 3)])
+        self.assertTrue(rect.intersects(t))
+
+    def test_intersects_polygon(self):
+        rect = AABB(Vector(-2, -2), Vector(2, 2))
+        # Outside, separated by AC's normal
+        t = Polygon([Vector(2, 3), Vector(3, 2), Vector(4, 3), Vector(3, 4)])
+        self.assertFalse(rect.intersects(t))
+        # Outside, separated by X axis
+        t = Polygon([Vector(-1, 3), Vector(0, 2.1), Vector(1, 3),
+                     Vector(0, 3.9)])
+        self.assertFalse(rect.intersects(t))
+        # On border
+        t = Polygon([Vector(1, 3), Vector(3, 1), Vector(5, 3), Vector(3, 5)])
+        self.assertTrue(rect.intersects(t))
+        # Overlap
+        t = Polygon([Vector(3, 0), Vector(3, 2), Vector(2, 3), Vector(0, 3)])
+        self.assertTrue(rect.intersects(t))
+
+    def test_bbox(self):
+        rect = AABB(Vector(2, 2), Vector(6, 4))
+        self.assertEqual(rect, rect.bbox())
