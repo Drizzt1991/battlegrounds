@@ -20,7 +20,7 @@ class TestDynamicAABB(ShapeTestCase):
 
     _shapes = {
         'triangle': Triangle([Vector(0, 0), Vector(1, 0), Vector(1, 1)]),
-        'circle': Circle(Vector(0, 0), radius=2),
+        'circle': Circle(Vector(0, 0), radius=1),
         'aabb': AABB(Vector(-2, -2), Vector(-1, -1)),
         'poly': Polygon(list(reversed([
             Vector(3, 3), Vector(3.5, 3.5),
@@ -48,7 +48,14 @@ class TestDynamicAABB(ShapeTestCase):
             result.append(self._dump_tree(node.right))
         return result
 
-    @pytest.mark.xfail
+    def _raycast_cb(self, obj, point, direction, max_distance):
+        # Callback to get the first hit of the ray
+        hit_dist = obj.shape.raycast(point, direction)
+        if hit_dist is not None:
+            if hit_dist < max_distance:
+                return hit_dist
+        return None
+
     def test_query_shape(self):
         tree = self._create_tree()
         # Check zero results
@@ -65,6 +72,42 @@ class TestDynamicAABB(ShapeTestCase):
         self.assertEqual(set(r), set([
             self._shapes['aabb'], self._shapes['circle'],
             self._shapes['triangle']]))
+
+    def test_raycast(self):
+        tree = self._create_tree()
+        # Void raycast (not in tree at all)
+        res = tree.raycast(Vector(3, -3), Vector(1, -1).unit(),
+                           callback=self._raycast_cb)
+        self.assertEqual(res, None)
+
+        # Void raycast (in AABB's, but no object intersection)
+        res = tree.raycast(Vector(1, -1), Vector(1, -1).unit(),
+                           callback=self._raycast_cb)
+        self.assertEqual(res, None)
+
+        # Raycast hitting many objects, returning AABB
+        p = Vector(-3, -3)
+        d = Vector(1, 1).unit()
+        res = tree.raycast(p, d, callback=self._raycast_cb)
+        self.assertEqual(res.shape, self._shapes['aabb'])
+
+        # Raycast hitting many objects, returning Circle
+        p = Vector(-0.5, -1.5)
+        d = Vector(1, 1).unit()
+        res = tree.raycast(p, d, callback=self._raycast_cb)
+        self.assertEqual(res.shape, self._shapes['circle'])
+
+        # Raycast hitting many objects, returning Triangle
+        p = Vector(2, 2)
+        d = Vector(-2, -3).unit()
+        res = tree.raycast(p, d, callback=self._raycast_cb)
+        self.assertEqual(res.shape, self._shapes['triangle'])
+
+        # Raycast hitting many objects, returning Polygon
+        p = Vector(4.5, 4)
+        d = Vector(-1, -1).unit()
+        res = tree.raycast(p, d, callback=self._raycast_cb)
+        self.assertEqual(res.shape, self._shapes['poly'])
 
     def test_insert_big_and_small(self):
         # This test assures the surface is used in inserts

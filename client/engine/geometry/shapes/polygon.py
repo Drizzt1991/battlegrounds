@@ -46,6 +46,52 @@ def classify_polygon(points):
     return Polygon(points)
 
 
+def _raycast(point, direction, vertices, normals):
+    """
+        "Real Time Collision Detection" does have this algorithm descibed in
+    `Intersecting Ray or Segment Against Convex Polyhedron`
+    While the algorithm is for 3D, it's easy to understand 2D concept
+        The idea is to find all intersections between ray and edges of the
+    polygon, but check if the ray hits it `behind` or `upfront`, forming the
+    `entering` and `exiting` points. If those 2 point sets, projected onto the
+    ray do not intersect, we have a ray hit, and our hit distance is the
+    maximum of `entering` points. We could also get the exiting point by this
+    algorithm for free, as it's the minimum of `exiting` point set.
+
+    """
+    t_min, t_max = 0.0, float('inf')
+    tagged_normal = None
+    for normal, vertex in zip(normals, vertices):
+        # Distance from vertex to point projected onto normal, with INVERTED
+        # sign
+        numerator = normal.dot(vertex - point)  # numerator
+        # direction's projection onto this edge normal
+        denominator = normal.dot(direction)
+
+        if denominator == 0.0:
+            if numerator < 0.0:
+                # Ray is parallel to edge and is outside of polygon's
+                # halfplane
+                return None
+        else:
+            t = numerator / denominator
+            if denominator < 0.0 and t > t_min:
+                # The segment enters this half-space.
+                t_min = t
+                tagged_normal = normal
+            elif denominator > 0.0 and t < t_max:
+                # The segment exits this half-space.
+                t_max = t
+
+        if t_max < t_min:
+            return None
+
+    if tagged_normal is not None:
+        return t_min
+
+    return None
+
+
 class TriangleIntersection(BaseIntersection):
 
     def __init__(self, shape, other, closest):
@@ -73,7 +119,7 @@ class Triangle(BaseShape):
         if isinstance(other, Triangle):
             return self._a == other._a and self._b == other._b and \
                 self._c == other._c
-        raise NotImplemented
+        return False
 
     def __hash__(self):
         return hash((self.__class__, self._a, self._b, self._c))
@@ -90,6 +136,17 @@ class Triangle(BaseShape):
     @property
     def points(self):
         return (self._a, self._b, self._c)
+
+    @lazy_property
+    def normals(self):
+        points = (self._a, self._b, self._c)
+        normals = []
+        prev_point = points[-1]
+        for point in points:
+            normal = (point - prev_point).rotate_deg(-90)
+            normals.append(normal)
+            prev_point = point
+        return normals
 
     def contains(self, other):
         assert isinstance(other, Vector)
@@ -173,6 +230,11 @@ class Triangle(BaseShape):
             return intersect_aabb_triangle(other, self)
         raise ValueError(other)
 
+    def raycast(self, point, direction):
+        vertices = self.points
+        normals = self.normals
+        return _raycast(point, direction, vertices, normals)
+
 
 class PolygonIntersection(BaseIntersection):
     pass
@@ -188,7 +250,7 @@ class Polygon(BaseShape):
     def __eq__(self, other):
         if isinstance(other, Polygon):
             return self._points == other._points
-        raise NotImplemented
+        return False
 
     def __hash__(self):
         return hash((self.__class__, self._points))
@@ -232,6 +294,17 @@ class Polygon(BaseShape):
     @property
     def points(self):
         return self._points
+
+    @lazy_property
+    def normals(self):
+        points = self._points
+        normals = []
+        prev_point = points[-1]
+        for point in points:
+            normal = (point - prev_point).rotate_deg(-90)
+            normals.append(normal)
+            prev_point = point
+        return normals
 
     def _contains(self, other):
         """ Subroutine for containment checks. Returns:
@@ -443,6 +516,14 @@ class Polygon(BaseShape):
                 # selection becomes expensive
                 return None
         return pivot
+
+    def raycast(self, point, direction):
+        vertices = self.points
+        normals = self.normals
+        return _raycast(point, direction, vertices, normals)
+
+    def translate(self, dv):
+        return Polygon([p + dv for p in self.points])
 
 
 from .intersection import (  # noqa
