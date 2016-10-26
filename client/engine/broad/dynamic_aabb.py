@@ -27,9 +27,12 @@
         }
 
 """
-
+import math
 
 from engine.geometry.shapes.shape import BaseShape
+from engine.geometry.vector import EPSILON
+from engine.geometry.utils import min_vector, max_vector
+from engine.geometry import AABB, Vector
 
 from .abc import ABCBroadPhase
 
@@ -197,6 +200,86 @@ class DynamicAABB(ABCBroadPhase):
         for obj in self._query_aabb(self._root, shape_aabb):
             results.append(obj)
         return results
+
+    def raycast(self, point, direction, *, callback, max_distance=None):
+        """ Implementation taken directly from Box2D, as it's quite extensible
+        there and optimized.
+            This tree does not quite give as an easy way to get the `first`
+        hit effitiently, but we can iterate over all objects, that ray MAY
+        hit quite fast.
+            If we want to get the `first` hit, we can check each object for ray
+        intersection in callback and return a modified max_distance version,
+        that will limit the search area, with last found element being our
+        `first` hit. For example:
+
+            res = {'res': None}
+
+            def cb(obj, point, direction, max_distance, res=res):
+                ray_hit = RAY_TEST(obj, point, direction, max_distance)
+                if ray_hit is not None:
+                    res['res'] = obj
+                    _, hit_dist = ray_hit
+                    return hit_dist
+                return None
+
+            tree.raycast(p, d, max_distance=1000, callback=cb)
+
+
+        If we need any element, just return 0.0 from callback, it will stop
+        traversing the tree.
+        Has no return value, use callback for that.
+
+        NOTE: I know, that this interface is very un-pythonic, but a generator
+        is even harder to work with, as it requires usage of `send` API for
+        shortening the distance.
+        """
+        assert abs(direction.length2() - 1) < EPSILON
+
+        if self._root is None:
+            return None
+
+        v = direction.rotate_deg(90)
+        abs_v = Vector(math.fabs(v.x), math.fabs(v.y))
+
+        if max_distance is None:
+            max_distance = float("inf")
+
+        p2 = point + direction * max_distance
+        segment_aabb = AABB(min_vector(point, p2), max_vector(point, p2))
+
+        node_stack = [self._root]
+        last_result = None
+        while node_stack:
+            node = node_stack.pop()
+            # First check AABB
+            if not node.aabb.intersects(segment_aabb):
+                continue
+            # Separating axis for segment (Gino, p80).
+            # |dot(v, p1 - c)| > dot(|v|, h)
+            c = node.aabb.center
+            h = node.aabb.extents
+            separation = abs(v.dot(point - c)) - abs_v.dot(h)
+            if separation > 0:
+                continue
+            # Ok, now we know, this AABB intersects the ray
+            if node.leaf:
+                value = callback(node.obj, point, direction, max_distance)
+                if value is None:
+                    continue
+                last_result = node.obj
+                if value == 0:
+                    # Client has terminated the raycast
+                    return last_result
+                if value > 0:
+                    # Fixup the bounds of our AABB
+                    max_distance = value
+                    p2 = point + direction * max_distance
+                    segment_aabb = AABB(
+                        min_vector(point, p2), max_vector(point, p2))
+            else:
+                node_stack.append(node.left)
+                node_stack.append(node.right)
+        return last_result
 
     def _query_aabb(self, node, aabb):
         if node is None or not node.aabb.intersects(aabb):
