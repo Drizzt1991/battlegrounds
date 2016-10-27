@@ -2,18 +2,18 @@ FLAGS=
 
 setup:
 	pip install -r requirements.txt
-	make -C client setup
+	make -C battlegrounds setup
 
 test:
-	make -C client test
+	make -C battlegrounds test
 
 vtest:
-	make -C client vtest
+	make -C battlegrounds vtest
 
 cov cover coverage:
-	make -C client cov
+	make -C battlegrounds cov
 
 clean:
-	make -C client clean
+	make -C battlegrounds clean
 
 .PHONY: all build venv flake test vtest testloop cov clean doc

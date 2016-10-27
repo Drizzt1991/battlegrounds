@@ -23,9 +23,9 @@ def read(f):
     return open(os.path.join(os.path.dirname(__file__), f)).read().strip()
 
 args = dict(
-    name='client',
+    name='battlegrounds',
     version=version,
-    description=('"Battlegrounds" test game client'),
+    description=('"Battlegrounds" test game'),
     long_description='\n\n'.join((read('README.rst'), read('CHANGES.txt'))),
     classifiers=[
         'Intended Audience :: Developers',
@@ -36,12 +36,12 @@ args = dict(
     author='Taras Voinarovskyi',
     author_email='voyn1991@gmail.com',
     url='https://github.com/Drizzt1991/battlegrounds',
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('tests', 'manual tests')),
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
             'client = client.main:main',
+            'server = server.main:main',
         ],
-    }
-    )
+    })
 setup(**args)
