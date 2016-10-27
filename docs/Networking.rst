@@ -2,6 +2,7 @@ Networking
 ----------
 
 In Battlegrounds game we use 2 protocols for client operation:
+
     * Rest API for transaction commands (login, statistics, other API's)
     * Socket protocol for Game Logic (character movement, skills, world events,
       etc...)
@@ -40,6 +41,7 @@ General packet structure:
     * ``channel`` - 1 byte *char*
     * ``op_code`` - 1 byte *char*
     * ``version`` - 1 byte *char*
+    * ``payload`` - depending on ``op_code`` and ``version``
 
 Specific purpose Channels:
 
@@ -50,22 +52,52 @@ Specific purpose Channels:
 UDP AUTH packet
 ```````````````
 
-AUTH packet is quite unique, as it MUST be the 1-st packet on this session,
+**Client --> Server**
+
+**AUTH** packet is quite unique, as it MUST be the 1-st packet on this session,
 MUST always be sent with ``channel==0x00`` and should be repeated until
 AUTH_OK received, or expired by connection timeout (received with
 ``SessionID``).
 
 General params:
 
-.. code::
+.. code:: C
+
     channel = 0x00
     op_code = 0x00
     version = 0x00
 
-Packet structure:
+AUTH packet payload is EMPTY
 
-.. code::
+.. code:: C
+
+    struct AUTH {
+        HEADER header
+        // ... payload empty
+    }
+
+UDP AUTH_OK packet
+``````````````````
+
+**Server --> Client**
+
+**AUTH_OK** packet is only sent after **AUTH** packet. AUTH_OK will be sent
+only 1-ce for each **AUTH** request.
+
+General params:
+
+.. code:: C
+
     channel = 0x00
-    op_code = 0x00
+    op_code = 0x01
     version = 0x00
+
+AUTH_OK packet payload is EMPTY
+
+.. code:: C
+
+    struct AUTH {
+        HEADER header
+        // ... payload empty
+    }
 
