@@ -1,3 +1,6 @@
+from .vector import Vector
+
+
 def _det(matrix, mul):
     width = len(matrix)
     if width == 1:
@@ -66,3 +69,29 @@ def seg_closest(a, b, c):
     t = max(0, min(1, ab.dot(ac) / len2_ab))
     c_proj = a + t * ab
     return c_proj
+
+
+def _x_op(v):
+    return v.x
+
+
+def _y_op(v):
+    return v.y
+
+
+def min_vector(*args):
+    """ Returns min by x and y axes
+    """
+    return Vector(
+        min(args, key=_x_op).x,
+        min(args, key=_y_op).y
+    )
+
+
+def max_vector(*args):
+    """ Returns max by x and y axes
+    """
+    return Vector(
+        max(args, key=_x_op).x,
+        max(args, key=_y_op).y
+    )

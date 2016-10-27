@@ -73,16 +73,12 @@ class AABB(BaseShape):
 
     @property
     def center(self):
-        return Vector((self._min.x + self._max.x) / 2,
-                      (self._min.y + self._max.y) / 2)
+        return Vector((self._min.x + self._max.x) * 0.5,
+                      (self._min.y + self._max.y) * 0.5)
 
     @property
-    def width(self):
-        return (self._max.x - self._min.x) / 2
-
-    @property
-    def height(self):
-        return (self._max.y - self._min.y) / 2
+    def extents(self):
+        return (self._max - self._min) * 0.5
 
     def bbox(self):
         return self
@@ -109,8 +105,9 @@ class AABB(BaseShape):
     def distance2(self, other):
         assert isinstance(other, Vector)
         c = self.center
-        w = self.width
-        h = self.height
+        ext = self.extents
+        w = ext.x
+        h = ext.y
         dx = max(math.fabs(other.x - c.x) - w, 0)
         dy = max(math.fabs(other.y - c.y) - h, 0)
         return dx ** 2 + dy ** 2
@@ -129,7 +126,7 @@ class AABB(BaseShape):
             return intersect_aabb_triangle(self, other)
         raise ValueError(other)
 
-    def time_of_impact(self, point, direction):
+    def raycast(self, point, direction):
         tmin = 0
         tmax = float("inf")
         # Check X slab
@@ -160,6 +157,8 @@ class AABB(BaseShape):
                 return None
 
         return tmin
+
+    time_of_impact = raycast
 
     def _closest_point(self, point):
         p_x, p_y = point.x, point.y

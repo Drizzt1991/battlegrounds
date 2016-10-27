@@ -106,7 +106,7 @@ class Circle(BaseShape):
             return intersect_circle_polygon(self, other)
         raise ValueError(other)
 
-    def time_of_impact(self, point, direction):
+    def raycast(self, point, direction):
         m = point - self._c
         b = m.dot(direction)
         c = m.dot(m) - self._r ** 2
@@ -125,6 +125,8 @@ class Circle(BaseShape):
         if t < 0:
             t = 0
         return t
+
+    time_of_impact = raycast
 
     def translate(self, position):
         return Circle(self._c + position, self._r)

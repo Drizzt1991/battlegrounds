@@ -21,8 +21,7 @@ class ABCBroadPhase(object):
 
     @abstractmethod
     def add(self, obj, *args):
-        """ Add object to broad phase queries. object.shape should be
-            object's shape.
+        """ Add object to broad phase queries.
             Returns: node_id of the created node
         """
         raise NotImplementedError()
@@ -36,12 +35,12 @@ class ABCBroadPhase(object):
 
     @abstractmethod
     def query(self, shape):
-        """ Return objects, that intersect this shape.
+        """ Return objects, that MAY intersect this shape.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def raycast(self, point, direction):
+    def raycast(self, point, direction, max_distance=None):
         """ Return an object, that was first hit by this ray """
         raise NotImplementedError()
 

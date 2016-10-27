@@ -15,9 +15,7 @@ vtest: flake
 
 cov cover coverage: flake
 	coverage erase
-	coverage run --source=engine,client,tests -m nose -s $(FLAGS) tests
-	coverage report
-	coverage html
+	py.test -s --cov client --cov engine --cov tests --cov-report html $(FLAGS) tests
 	echo "open file://`pwd`/htmlcov/index.html"
 
 clean:
