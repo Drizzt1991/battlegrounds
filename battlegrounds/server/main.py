@@ -1,7 +1,7 @@
 import argparse
 import asyncio
 
-from net import UDPServerEchoProtocol
+from .net import UDPServerEchoProtocol
 
 
 def get_parser():
@@ -36,6 +36,7 @@ def main():
         UDPServerEchoProtocol, local_addr=(args.host, args.port))
     transport, protocol = loop.run_until_complete(listen)
     t = loop.create_task(xxx())
+    print("Started UDP server")
 
     try:
         loop.run_forever()
@@ -47,4 +48,5 @@ def main():
         transport.close()
         loop.close()
 
-main()
+if __name__ == "__main__":
+    main()

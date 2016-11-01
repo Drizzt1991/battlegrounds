@@ -2,7 +2,7 @@ FLAGS=
 
 
 flake:
-	flake8 client engine tests
+	flake8 client server engine tests
 
 setup:
 	pip install -Ue .
@@ -15,7 +15,8 @@ vtest: flake
 
 cov cover coverage: flake
 	coverage erase
-	py.test -s --cov client --cov engine --cov tests --cov-report html $(FLAGS) tests
+	py.test -s --cov client --cov engine --cov tests \
+		--tb=native --cov-report html $(FLAGS) tests
 	echo "open file://`pwd`/htmlcov/index.html"
 
 clean:
