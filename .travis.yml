@@ -12,11 +12,11 @@ install: "pip install -r requirements.txt"
 install:
   - pip install -r requirements.txt
   - pip install coveralls
-  - pushd client && pip install . && popd
+  - pushd battlegrounds && pip install . && popd
 
 # command to run tests
 script:
   - make cov
 
 after_success:
-  - pushd client && coveralls && popd
+  - pushd battlegrounds && coveralls && popd
