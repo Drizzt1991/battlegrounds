@@ -13,6 +13,9 @@ vtest:
 cov cover coverage:
 	make -C battlegrounds cov
 
+cov-all:
+	make -C battlegrounds cov
+
 clean:
 	make -C battlegrounds clean
 

@@ -92,6 +92,27 @@ on **messages**, which are:
 We operate the **message** term here, because it can be of arbitrary size and
 MAY be split into several UDP packets for delivery.
 
+Those channels operate using private MSG and MSG_ACK packets, described below.
+
+Sender's algorithm:
+
+    * While not all MSG's ACK received
+        * For each non ACK'ed block in splitted msg
+            * Send block's MSG packet
+        * Wait up to ``retransmission_timeout`` milliseconds for all MSG_ACK's
+
+Receiver's algorithm:
+
+    * If msg_id lower than last known MSG (with check for overflow):
+        * Just send MSG_ACK this message and skip, as MSG already delivered
+        * Return
+    * If it's the first MSG block received:
+        * Allocate MSG buffer
+    * Write MSG block data to MSG buffer
+    * Send MSG_ACK for this block
+    * If MSG buffer is full:
+        * Yield msg to application
+
 
 UDP binary object presentation
 ``````````````````````````````
@@ -344,4 +365,73 @@ Packet payload
         char movementBits;
         char op_sig;  // Client Incremental counter
         char event_sig;  // Server Incremental counter
+    }
+
+
+UDP Reliable MSG packet
+```````````````````````
+
+**Server --> Client**
+**Client --> Server**
+
+MSG is a special private packet, that implements reliable delivery on reliable
+channels. Those packets fully wrap the outgoing one, possibly splitting it
+into several parts.
+
+If message is not splitted block_id will be `0x00`
+
+
+General params:
+
+.. code:: C
+
+    channel = 0xXX
+    op_code = 0x10
+    version = 0x00
+
+Packet payload
+
+.. code:: C
+
+    struct MSG {
+        HEADER header;
+        long msg_id;       // 4 bytes message ID
+        long msg_len;      // 4 bytes message length
+        short block_id;    // Block position for splitted messages
+    }
+
+If we split the UDP packets to send only 508 bytes per packet (the actual
+splitted block size is configurable and not part of protocol) the max size of
+our message is (as HEADER is 8 bytes, MSG = 10 + 8; we can have 2 ^ 16 blocks):
+
+.. code:: Python
+    
+    (508 - (8 + 10)) * (2 ** 16) = 32112640  # Or ~ 30MB
+
+
+UDP Reliable MSG_ACK packet
+```````````````````````````
+
+**Server --> Client**
+**Client --> Server**
+
+MSG_ACK's are responses to MSG packets. Those are simple ACK's meaning we only
+confirm 1 block per packet.
+
+General params:
+
+.. code:: C
+
+    channel = 0xXX
+    op_code = 0x11
+    version = 0x00
+
+Packet payload
+
+.. code:: C
+
+    struct MSG_ACK {
+        HEADER header;
+        long msg_id;       // 4 bytes message ID
+        short block_id;    // Which blocks were received already
     }
