@@ -3,17 +3,18 @@ import asyncio
 
 class UDPSimpleClient:
 
-    def __init__(self, transport, protocol, loop):
+    def __init__(self, session_id, transport, protocol, loop):
+        self.session_id = session_id
         self.transport = transport
         self.protocol = protocol
         self.loop = loop
 
     @classmethod
-    async def connect(cls, host, port, loop):
+    async def connect(cls, session_id, host, port, loop):
         transport, protocol = await loop.create_datagram_endpoint(
-            UDPSimpleProtocol, remote_addr=(host, port))
-        protocol.set_loop(loop)
-        return cls(transport, protocol, loop)
+            lambda: UDPSimpleProtocol(session_id, loop),
+            remote_addr=(host, port))
+        return cls(session_id, transport, protocol, loop)
 
     def send_raw(self, raw_data):
         self.transport.sendto(raw_data)
@@ -33,8 +34,9 @@ class UDPSimpleClient:
 
 class UDPSimpleProtocol:
 
-    def set_loop(self, loop):
+    def __init__(self, session_id, loop):
         self.buffer = []
+        self.session_id = session_id
         self.event = asyncio.Event(loop=loop)
 
     def connection_made(self, transport):

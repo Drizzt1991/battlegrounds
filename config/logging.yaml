@@ -1,0 +1,12 @@
+version: 1
+handlers: 
+    console: 
+        class: logging.StreamHandler
+        level: DEBUG
+        stream: ext://sys.stdout
+root: 
+    handlers: ["console"]
+    level: DEBUG
+loggers: 
+    client: {}
+    server: {}

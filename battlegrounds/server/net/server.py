@@ -1,90 +1,12 @@
 import asyncio
 import logging
-import struct
-from collections import namedtuple
+
+from .base import UDPBaseConnection
+from .packet import (
+    Auth, AuthOk, Close, Header, Ping, Pong, SESSION_ID, parse_packet)
+
 
 log = logging.getLogger(__name__)
-
-SESSION_ID = struct.Struct("!L")
-
-
-class Header(namedtuple(
-        "Header", ("session_id", "channel_id", "op_code", "version",
-                   "reserved"))):
-
-    struct = struct.Struct("!LBBBB")
-    size = struct.size
-
-    @classmethod
-    def decode(cls, data, offset=0):
-        return cls(*cls.struct.unpack_from(data, offset))
-
-    def encode(self, data, offset=0):
-        self.struct.pack_into(data, offset, *self)
-
-
-class Auth(namedtuple("Auth", ())):
-
-    op_code = 0x00
-    version = 0x00
-
-    size = 0
-
-    @classmethod
-    def decode(cls, data, offset=0):
-        return cls()
-
-    def encode(self, data, offset=0):
-        # Payload is empty
-        pass
-
-
-class AuthOk(namedtuple("AuthOk", ("timestamp"))):
-
-    op_code = 0x01
-    version = 0x00
-
-    struct = struct.Struct("!Q")
-    size = struct.size
-
-    @classmethod
-    def decode(cls, data, offset=0):
-        return cls(*cls.struct.unpack_from(data, offset))
-
-    def encode(self, data, offset=0):
-        self.struct.pack_into(data, offset, *self)
-
-
-class Ping(namedtuple("Ping", ())):
-
-    op_code = 0x02
-    version = 0x00
-
-    size = 0
-
-    @classmethod
-    def decode(cls, data, offset=0):
-        return cls()
-
-    def encode(self, data, offset=0):
-        # Payload is empty
-        pass
-
-
-class Pong(namedtuple("Pong", ("timestamp"))):
-
-    op_code = 0x03
-    version = 0x00
-
-    struct = struct.Struct("!Q")
-    size = struct.size
-
-    @classmethod
-    def decode(cls, data, offset=0):
-        return cls(*cls.struct.unpack_from(data, offset))
-
-    def encode(self, data, offset=0):
-        self.struct.pack_into(data, offset, *self)
 
 
 class UDPGameProtocol(asyncio.DatagramProtocol):
@@ -130,7 +52,7 @@ class UDPGameProtocol(asyncio.DatagramProtocol):
         log.info("Connection lost, exc=%r", exc)
 
 
-class UDPConnection:
+class UDPConnection(UDPBaseConnection):
 
     def __init__(self, session_id, transport, protocol):
         self.session_id = session_id
@@ -147,7 +69,7 @@ class UDPConnection:
         # TODO: Make it configurable
         self._timeout_delay = 0.5
         self._timeout_handle = self.loop.call_later(
-            self._timeout_delay, self.timeout_check)
+            self._timeout_delay, self._timeout_check)
 
     @property
     def status(self):
@@ -161,18 +83,9 @@ class UDPConnection:
         return "UDPConnection<{!r}, status={!r}, addr={!r}>".format(
             self.session_id, self._status, self._addr)
 
-    def open_channel(self, channel_id, channel_type=None):
-        if channel_type is None:
-            channel_type = UDPChannel
-        if channel_id in self._channels:
-            raise KeyError("Channel {} already opened".format(channel_id))
-        self._channels[channel_id] = channel = channel_type(
-            self, channel_id, self.transport)
-        return channel
-
     # Timeout management
 
-    def timeout_check(self):
+    def _timeout_check(self):
         cur_time = self.loop.time()
         last_time = self._last_action
         timeout = self._timeout_delay
@@ -182,10 +95,17 @@ class UDPConnection:
         else:
             next_check_in = timeout - (cur_time - last_time)
             self._timeout_handle = self.loop.call_later(
-                next_check_in, self.timeout_check)
+                next_check_in, self._timeout_check)
 
-    def close(self):
-        self._timeout_handle.cancel()
+    def _bump_session(self):
+        self._last_action = self.loop.time()
+
+    def close(self, msg=""):
+        # Last attempt to notify client about connection close
+        self.send_packet(0, Close())
+        super().close(msg)
+        if self._timeout_handle is not None:
+            self._timeout_handle.cancel()
         self._timeout_handle = None
         self.protocol = None
         self.transport = None
@@ -193,14 +113,20 @@ class UDPConnection:
     # Packet processing methods
 
     def dispatch(self, data, addr):
+        self._bump_session()
         header = Header.decode(data)
         if header.channel_id == 0x00:
             if header.op_code == Auth.op_code:
                 # In case AuthOk did not arrive to client, we always resend it
                 if self._status != "established":
-                    self._do_auth(header, data, addr)
+                    self._do_auth(addr)
             elif header.op_code == Ping.op_code:
-                self._do_ping(header, data, addr)
+                if self._status != "created":
+                    packet = parse_packet(header, data)
+                    self._do_ping(packet)
+            elif header.op_code == Close.op_code:
+                if self._status == "established":
+                    self.close("Closed by client")
             else:
                 log.warn("Unexpected %r on channel=0x00", header.op_code)
                 return
@@ -208,10 +134,10 @@ class UDPConnection:
             assert header.channel_id in self._channels
             assert self._status == "established"
             channel = self._channels[header.channel_id]
-            # TODO: parse data and only feed parsed packet
-            channel.feed(header, data)
+            packet = parse_packet(header, data)
+            channel.feed(header, packet)
 
-    def _do_auth(self, header, data, addr):
+    def _do_auth(self, addr):
         if self._status == "created":
             log.info("New connection from addr=%r session_id=%r",
                      addr, self.session_id)
@@ -221,14 +147,14 @@ class UDPConnection:
         # TODO: set a proper game timestamp
         self.send_packet(0, AuthOk(timestamp=0))
 
-    def _do_ping(self, header, data, addr):
+    def _do_ping(self, ping):
         if self._status == "auth-recv":
             self._status = "established"
             # Open other channels
             self.open_channel(1)
             self.open_channel(2)
         # TODO: set a proper game timestamp
-        self.send_packet(0, Pong(timestamp=0))
+        self.send_packet(0, Pong(ping.seq, timestamp=0))
 
     def send_packet(self, channel_id, packet, *, addr=None):
         header = Header(self.session_id, channel_id,
@@ -237,17 +163,3 @@ class UDPConnection:
         header.encode(data)
         packet.encode(data, offset=Header.size)
         self.transport.sendto(data, addr=addr or self.addr)
-
-
-class UDPChannel:
-
-    def __init__(self, conn, channel_id, transport):
-        self._conn = conn
-        self.channel_id = channel_id
-        self.transport = transport
-
-    def feed(self, header, packet):
-        pass
-
-    def send_packet(self, packet):
-        self._conn.send_packet(self.channel_id, packet)

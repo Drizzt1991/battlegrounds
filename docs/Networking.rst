@@ -183,13 +183,6 @@ AUTH_OK packet payload is EMPTY
     struct AUTH_OK {
         HEADER header;
         long long timestamp;  // 8 bytes
-        // Character Movement structure
-        VectorD position;
-        VectorF forward; // unit vector
-        char movementBits;
-        // Character Data structure
-        char name_len;
-        char name[name_len];  // Length == name_len
     }
 
 UDP PING packet

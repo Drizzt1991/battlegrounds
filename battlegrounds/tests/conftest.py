@@ -42,16 +42,6 @@ def loop(event_loop):
     return event_loop
 
 
-@pytest.yield_fixture
-def udp_session_id(udp_server):
-    session = random.randint(0, 65000)
-    while session in udp_server['protocol'].sessions:
-        session = random.randint(0, 65000)
-    udp_server['protocol'].open_connection(session)
-    yield session
-    udp_server['protocol'].close_connection(session)
-
-
 @pytest.fixture(scope="session")
 def udp_server(loop, unused_port):
     port = unused_port()
@@ -67,8 +57,18 @@ def udp_server(loop, unused_port):
     }
 
 
-@pytest.fixture(scope="session")
-def udp_simple_client(udp_server, loop):
+@pytest.yield_fixture
+def udp_session_id(udp_server):
+    session = random.randint(0, 65000)
+    while session in udp_server['protocol'].sessions:
+        session = random.randint(0, 65000)
+    udp_server['protocol'].open_connection(session)
+    yield session
+    udp_server['protocol'].close_connection(session)
+
+
+@pytest.fixture
+def udp_test_client(udp_session_id, udp_server, loop):
     coro = UDPSimpleClient.connect(
-        udp_server['host'], udp_server['port'], loop)
+        udp_session_id, udp_server['host'], udp_server['port'], loop)
     return loop.run_until_complete(coro)

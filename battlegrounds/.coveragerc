@@ -4,4 +4,4 @@ source =
     server
     engine
 omit =
-    _testutil.py
+    */_testutil.py
