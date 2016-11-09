@@ -51,6 +51,7 @@ struct AUTH
 {
     // op_code = x00
     // version = x00
+    long session
 };
 // Repeat until user data received
 struct AUTH_OK
