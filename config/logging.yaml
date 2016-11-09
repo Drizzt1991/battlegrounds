@@ -10,3 +10,4 @@ root:
 loggers: 
     client: {}
     server: {}
+    asyncio: {}

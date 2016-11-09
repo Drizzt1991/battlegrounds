@@ -31,17 +31,23 @@ class Header(_StructBased, namedtuple(
         "Header", ("session_id", "channel_id", "op_code", "version",
                    "reserved"))):
 
+    __slots__ = ()
+
     struct = struct.Struct("!LBBBB")
     size = struct.size
 
 
 class Auth(_EmptyPayload, namedtuple("Auth", ())):
 
+    __slots__ = ()
+
     op_code = 0x00
     version = 0x00
 
 
 class AuthOk(_StructBased, namedtuple("AuthOk", ("timestamp"))):
+
+    __slots__ = ()
 
     op_code = 0x01
     version = 0x00
@@ -52,6 +58,8 @@ class AuthOk(_StructBased, namedtuple("AuthOk", ("timestamp"))):
 
 class Ping(_StructBased, namedtuple("Ping", ("seq"))):
 
+    __slots__ = ()
+
     op_code = 0x02
     version = 0x00
 
@@ -61,6 +69,8 @@ class Ping(_StructBased, namedtuple("Ping", ("seq"))):
 
 class Pong(_StructBased, namedtuple("Pong", ("seq, timestamp"))):
 
+    __slots__ = ()
+
     op_code = 0x03
     version = 0x00
 
@@ -69,6 +79,8 @@ class Pong(_StructBased, namedtuple("Pong", ("seq, timestamp"))):
 
 
 class Close(_EmptyPayload, namedtuple("Close", ())):
+
+    __slots__ = ()
 
     op_code = 0x04
     version = 0x00

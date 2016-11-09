@@ -30,7 +30,7 @@ class UDPBaseConnection:
             return
         channel = self._channels[header.channel_id]
         packet = parse_packet(header, data)
-        channel.feed(header, packet)
+        channel.feed(packet)
 
     def close(self, msg=""):
         for channel in self._channels.values():
@@ -48,7 +48,7 @@ class UDPChannel:
 
     # Protected methods
 
-    def feed(self, header, packet):
+    def feed(self, packet):
         queue = self._waiters[type(packet)]
         while True:
             try:
@@ -60,14 +60,16 @@ class UDPChannel:
             # the next waiter
             if waiter.cancelled():
                 continue
-            waiter.set_result((header, packet))
+            waiter.set_result(packet)
             break
 
     def close(self, msg=""):
-        for queue in self._waiters:
+        for key, queue in self._waiters.items():
             for waiter in queue:
-                waiter.set_exception(ConnectionClose(msg))
+                if not waiter.done():
+                    waiter.set_exception(ConnectionClose(msg))
             queue.clear()
+        self._waiters.clear()
 
     # Public methods
 

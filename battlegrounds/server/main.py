@@ -48,6 +48,9 @@ def main():
         lambda loop=loop: UDPGameProtocol(loop=loop),
         local_addr=(args.host, args.port))
     transport, protocol = loop.run_until_complete(listen)
+    # TODO: Remove this
+    protocol.open_connection(0)
+    # TODO: Remove this
     t = loop.create_task(xxx())
     print("Started UDP server")
 

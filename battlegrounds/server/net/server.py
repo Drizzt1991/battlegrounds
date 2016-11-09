@@ -19,9 +19,9 @@ class UDPGameProtocol(asyncio.DatagramProtocol):
     def sessions(self):
         return self._sessions
 
-    def open_connection(self, session_id):
+    def open_connection(self, session_id, conf=None):
         self._sessions[session_id] = UDPConnection(
-            session_id, self.transport, self)
+            session_id, self.transport, self, conf)
 
     def close_connection(self, session_id):
         conn = self._sessions.pop(session_id, None)
@@ -54,7 +54,7 @@ class UDPGameProtocol(asyncio.DatagramProtocol):
 
 class UDPConnection(UDPBaseConnection):
 
-    def __init__(self, session_id, transport, protocol):
+    def __init__(self, session_id, transport, protocol, conf):
         self.session_id = session_id
         self._channels = {
             0x00: None   # This channel is handled by Connection directly
@@ -67,7 +67,7 @@ class UDPConnection(UDPBaseConnection):
         # Timeout handler
         self._last_action = self.loop.time()
         # TODO: Make it configurable
-        self._timeout_delay = 0.5
+        self._timeout_delay = 5
         self._timeout_handle = self.loop.call_later(
             self._timeout_delay, self._timeout_check)
 
@@ -101,8 +101,9 @@ class UDPConnection(UDPBaseConnection):
         self._last_action = self.loop.time()
 
     def close(self, msg=""):
-        # Last attempt to notify client about connection close
-        self.send_packet(0, Close())
+        if self._addr is not None:
+            # Last attempt to notify client about connection close
+            self.send_packet(0, Close())
         super().close(msg)
         if self._timeout_handle is not None:
             self._timeout_handle.cancel()

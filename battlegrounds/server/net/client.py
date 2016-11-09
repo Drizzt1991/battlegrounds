@@ -5,7 +5,7 @@ from .base import ConnectionClose, UDPBaseConnection
 from .packet import Auth, AuthOk, Close, Header, Ping, Pong, SESSION_ID
 
 
-async def connect_client(cls, session_id, host, port, loop):
+async def connect_client(session_id, host, port, loop):
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: UDPClientProtocol(session_id, loop),
         remote_addr=(host, port))
@@ -89,7 +89,7 @@ class UDPClientProtocol(UDPBaseConnection, asyncio.DatagramProtocol):
                 self._calibrate(last_ping, last_pong, pong.timestamp)
             sleep_for = ping_interval - (self.loop.time() - last_ping)
             if sleep_for > 0:
-                await asyncio.sleep(sleep_for)
+                await asyncio.sleep(sleep_for, loop=self.loop)
 
     def close(self, msg=""):
         # Last attempt to notify server about connection close
