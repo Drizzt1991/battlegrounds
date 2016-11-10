@@ -67,7 +67,7 @@ class UDPConnection(UDPBaseConnection):
         # Timeout handler
         self._last_action = self.loop.time()
         # TODO: Make it configurable
-        self._timeout_delay = 5
+        self._timeout_delay = 0.5
         self._timeout_handle = self.loop.call_later(
             self._timeout_delay, self._timeout_check)
 
