@@ -2,6 +2,10 @@ pyyaml
 coverage
 pytest==3.0.3
 pytest-cov==2.4.0
+pytest-asyncio==0.5.0
 ipdb
 pyglet
 flake8
+Sphinx==1.4.8
+sphinxcontrib-asyncio>=0.2.0
+sphinx-rtd-theme==0.1.9

@@ -26,9 +26,9 @@ def load_props(world, world_map):
             shape=shape, position=Vector(x, y))
         props.append(prop)
 
-    for x in range(100000):
-        x = random.randint(50, 10000)
-        y = random.randint(50, 10000)
+    for x in range(100):
+        x = random.randint(50, 100)
+        y = random.randint(50, 100)
         c = Circle(Vector(0, 0), random.randint(2, 5))
         prop = SimpleProp(
             shape=c, position=Vector(x, y))

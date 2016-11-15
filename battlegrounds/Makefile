@@ -15,7 +15,14 @@ vtest: flake
 
 cov cover coverage: flake
 	coverage erase
-	py.test -s --cov client --cov engine --cov tests \
+	py.test -s --cov client --cov engine --cov server \
+		--cov-config .coveragerc \
+		--tb=native --cov-report html $(FLAGS) tests
+	echo "open file://`pwd`/htmlcov/index.html"
+
+cov-all: flake
+	coverage erase
+	py.test -s --cov client --cov engine --cov server --cov tests \
 		--tb=native --cov-report html $(FLAGS) tests
 	echo "open file://`pwd`/htmlcov/index.html"
 

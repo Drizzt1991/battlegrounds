@@ -1,7 +1,11 @@
 import argparse
 import asyncio
+import pathlib
+from logging.config import dictConfig
 
-from .net import UDPServerEchoProtocol
+import yaml
+
+from .net import UDPGameProtocol
 
 
 def get_parser():
@@ -14,6 +18,10 @@ def get_parser():
         '--port', help='Port to use. Default: %(default)s',
         type=int,
         default=9999)
+    parser.add_argument(
+        '--logging', help='Logging file to use. Default: %(default)s',
+        type=pathlib.Path,
+        default="config/logging.yaml")
     return parser
 
 
@@ -29,12 +37,20 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
+    with args.logging.open("r+") as f:
+        log_conf = yaml.load(f)
+        dictConfig(log_conf)
+
     loop = asyncio.get_event_loop()
     print("Starting UDP server")
     # One protocol instance will be created to serve all client requests
     listen = loop.create_datagram_endpoint(
-        UDPServerEchoProtocol, local_addr=(args.host, args.port))
+        lambda loop=loop: UDPGameProtocol(loop=loop),
+        local_addr=(args.host, args.port))
     transport, protocol = loop.run_until_complete(listen)
+    # TODO: Remove this
+    protocol.open_connection(0)
+    # TODO: Remove this
     t = loop.create_task(xxx())
     print("Started UDP server")
 
@@ -47,6 +63,7 @@ def main():
         loop.run_until_complete(t)
         transport.close()
         loop.close()
+
 
 if __name__ == "__main__":
     main()
