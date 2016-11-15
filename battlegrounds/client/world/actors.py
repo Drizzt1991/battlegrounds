@@ -45,7 +45,11 @@ class Actor(ABCActor):
 class Character(Actor):
 
     shape = Circle(Vector(0, 0), CHARACTER_RADIUS)
-    movement = ActorMovement()
+
+    def __init__(self, world, position=Vector(0, 0)):
+        self._world = world
+        self._position = position
+        self.movement = ActorMovement()
 
     def tick(self, dt):
         move = self._get_movement_vector(dt)

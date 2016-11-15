@@ -114,7 +114,7 @@ class UDPClientProtocol(UDPBaseConnection, asyncio.DatagramProtocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        self._background_task = self.loop.create_task(self.auth)
+        self._background_task = self.loop.create_task(self.auth())
 
     def datagram_received(self, data, addr):
         self.log.debug('Received %r from %s' % (data, addr))
