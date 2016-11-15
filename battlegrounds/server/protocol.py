@@ -83,6 +83,7 @@ class Prop(namedtuple("Prop", (
         offset += _short.size
         data[offset:] = render_data
 
+
 _BaseShape = namedtuple("BaseShape", ['shape'])
 
 
